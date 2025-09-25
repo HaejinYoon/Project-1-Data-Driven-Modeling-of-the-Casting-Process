@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Data Analysis Team">
+<meta name="dcterms.date" content="2025-09-25">
+
+<title>다이캐스팅 제조 공정 데이터 탐색적 분석 (EDA)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="res_files/libs/clipboard/clipboard.min.js"></script>
+<script src="res_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="res_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="res_files/libs/quarto-html/popper.min.js"></script>
+<script src="res_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="res_files/libs/quarto-html/anchor.min.js"></script>
+<link href="res_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="res_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="res_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="res_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="res_files/libs/bootstrap/bootstrap-0d32754dec5c963b719b68ad757b426b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#프로젝트-개요" id="toc-프로젝트-개요" class="nav-link active" data-scroll-target="#프로젝트-개요">1. 프로젝트 개요</a>
+  <ul class="collapse">
+  <li><a href="#목적" id="toc-목적" class="nav-link" data-scroll-target="#목적">1.1 목적</a></li>
+  <li><a href="#프로젝트-의의" id="toc-프로젝트-의의" class="nav-link" data-scroll-target="#프로젝트-의의">1.2 프로젝트 의의</a></li>
+  </ul></li>
+  <li><a href="#데이터-개요" id="toc-데이터-개요" class="nav-link" data-scroll-target="#데이터-개요">2. 데이터 개요</a>
+  <ul class="collapse">
+  <li><a href="#데이터셋-정보" id="toc-데이터셋-정보" class="nav-link" data-scroll-target="#데이터셋-정보">2.1 데이터셋 정보</a></li>
+  <li><a href="#주요-변수-설명-예시-포함" id="toc-주요-변수-설명-예시-포함" class="nav-link" data-scroll-target="#주요-변수-설명-예시-포함">2.2 주요 변수 설명 (예시 포함)</a>
+  <ul class="collapse">
+  <li><a href="#기본-정보" id="toc-기본-정보" class="nav-link" data-scroll-target="#기본-정보">기본 정보</a></li>
+  <li><a href="#공정-상태" id="toc-공정-상태" class="nav-link" data-scroll-target="#공정-상태">공정 상태</a></li>
+  <li><a href="#용탕-단계" id="toc-용탕-단계" class="nav-link" data-scroll-target="#용탕-단계">용탕 단계</a></li>
+  <li><a href="#충진-단계" id="toc-충진-단계" class="nav-link" data-scroll-target="#충진-단계">충진 단계</a></li>
+  <li><a href="#냉각-단계" id="toc-냉각-단계" class="nav-link" data-scroll-target="#냉각-단계">냉각 단계</a></li>
+  <li><a href="#공정-속도" id="toc-공정-속도" class="nav-link" data-scroll-target="#공정-속도">공정 속도</a></li>
+  <li><a href="#품질-및-성능" id="toc-품질-및-성능" class="nav-link" data-scroll-target="#품질-및-성능">품질 및 성능</a></li>
+  <li><a href="#평가" id="toc-평가" class="nav-link" data-scroll-target="#평가">평가</a></li>
+  </ul></li>
+  <li><a href="#데이터-로딩-및-기본-확인" id="toc-데이터-로딩-및-기본-확인" class="nav-link" data-scroll-target="#데이터-로딩-및-기본-확인">2.3 데이터 로딩 및 기본 확인</a></li>
+  <li><a href="#데이터-전처리-및-파생-변수-생성" id="toc-데이터-전처리-및-파생-변수-생성" class="nav-link" data-scroll-target="#데이터-전처리-및-파생-변수-생성">2.4 데이터 전처리 및 파생 변수 생성</a></li>
+  <li><a href="#데이터-전처리" id="toc-데이터-전처리" class="nav-link" data-scroll-target="#데이터-전처리">2.5 데이터 전처리</a>
+  <ul class="collapse">
+  <li><a href="#molten_temp" id="toc-molten_temp" class="nav-link" data-scroll-target="#molten_temp">molten_temp</a></li>
+  <li><a href="#mold-code" id="toc-mold-code" class="nav-link" data-scroll-target="#mold-code">Mold Code</a></li>
+  <li><a href="#heating-furnace" id="toc-heating-furnace" class="nav-link" data-scroll-target="#heating-furnace">Heating Furnace</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">다이캐스팅 제조 공정 데이터 탐색적 분석 (EDA)</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+<p class="subtitle lead">Casting Defect Prediction &amp; Process Insight</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Data Analysis Team </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 25, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="프로젝트-개요" class="level1">
+<h1>1. 프로젝트 개요</h1>
+<section id="목적" class="level2">
+<h2 class="anchored" data-anchor-id="목적">1.1 목적</h2>
+<p>본 프로젝트는 <strong>다이캐스팅 제조 공정 데이터</strong>를 분석하여<br>
+제품 불량(<code>passorfail=0</code>) 발생 원인을 탐색하고,<br>
+품질 향상 및 스마트팩토리 기반 <strong>예측 모델링</strong>의 기초를 마련하는 것을 목적으로 합니다.</p>
+</section>
+<section id="프로젝트-의의" class="level2">
+<h2 class="anchored" data-anchor-id="프로젝트-의의">1.2 프로젝트 의의</h2>
+<ul>
+<li><strong>공정 품질 관리</strong>: 불량 발생 가능성이 높은 공정 조건을 사전 탐지<br>
+</li>
+<li><strong>데이터 기반 개선</strong>: 감이 아닌 데이터 분석을 통한 의사결정 지원<br>
+</li>
+<li><strong>자동화 가능성</strong>: 추후 머신러닝 기반 불량 예측 시스템 구축 기반</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="데이터-개요" class="level1">
+<h1>2. 데이터 개요</h1>
+<section id="데이터셋-정보" class="level2">
+<h2 class="anchored" data-anchor-id="데이터셋-정보">2.1 데이터셋 정보</h2>
+<ul>
+<li><strong>train.csv</strong>: 73,612행, 32열 (학습 데이터)<br>
+</li>
+<li><strong>test.csv</strong>: 18,403행, 31열 (테스트 데이터)<br>
+</li>
+<li><strong>목표 변수</strong>: <code>passorfail</code> (0=불량, 1=합격)</li>
+</ul>
+<hr>
+</section>
+<section id="주요-변수-설명-예시-포함" class="level2">
+<h2 class="anchored" data-anchor-id="주요-변수-설명-예시-포함">2.2 주요 변수 설명 (예시 포함)</h2>
+<section id="기본-정보" class="level3">
+<h3 class="anchored" data-anchor-id="기본-정보">기본 정보</h3>
+<ul>
+<li><code>id</code>: 고유 번호 (예: 0, 1, 2 …)<br>
+</li>
+<li><code>line</code>: 생산 라인 이름 (예: 전자교반 3라인 2호기)<br>
+</li>
+<li><code>name</code>: 장비 이름 (예: TM Carrier RH)<br>
+</li>
+<li><code>mold_name</code>: 금형 이름 (예: TM Carrier RH-Semi-Solid DIE-06)<br>
+</li>
+<li><code>date</code>: 측정 날짜 (예: 2019-01-02)<br>
+</li>
+<li><code>time</code>: 측정 시간 (예: 16:45:06)</li>
+</ul>
+</section>
+<section id="공정-상태" class="level3">
+<h3 class="anchored" data-anchor-id="공정-상태">공정 상태</h3>
+<ul>
+<li><code>count</code>: 누적 제품 개수 (예: 258, 243, 244 …)<br>
+</li>
+<li><code>working</code>: 장비 가동 여부 (예: 가동, 정지)<br>
+</li>
+<li><code>emergency_stop</code>: 비상 정지 여부 (예: ON, OFF)<br>
+</li>
+<li><code>registration_time</code>: 데이터 등록 시각 (예: 2019-01-02 16:45)<br>
+</li>
+<li><code>tryshot_signal</code>: 측정 딜레이 여부 (예: 공백 또는 신호 값)</li>
+</ul>
+</section>
+<section id="용탕-단계" class="level3">
+<h3 class="anchored" data-anchor-id="용탕-단계">용탕 단계</h3>
+<ul>
+<li><code>molten_temp</code>: 용탕 온도 (예: 731, 720, 722 …)<br>
+</li>
+<li><code>heating_furnace</code>: 용해로 코드 (예: A, B, None)</li>
+</ul>
+</section>
+<section id="충진-단계" class="level3">
+<h3 class="anchored" data-anchor-id="충진-단계">충진 단계</h3>
+<ul>
+<li><code>sleeve_temperature</code>: 주입 관 온도 (예: 550, 481 …)<br>
+</li>
+<li><code>EMS_operation_time</code>: 전자 교반 시간 (예: 23, 25 …)<br>
+</li>
+<li><code>low_section_speed</code>: 저속 주입 속도 (예: 110, 109, 112 …)<br>
+</li>
+<li><code>high_section_speed</code>: 고속 주입 속도 (예: 112, 125, 123 …)<br>
+</li>
+<li><code>mold_code</code>: 금형 코드 (예: 8722, 8412, B …)<br>
+</li>
+<li><code>molten_volume</code>: 주입 금속 양 (예: 75, 309 …)<br>
+</li>
+<li><code>cast_pressure</code>: 주입 압력 (예: 331, 309, 308 …)</li>
+</ul>
+</section>
+<section id="냉각-단계" class="level3">
+<h3 class="anchored" data-anchor-id="냉각-단계">냉각 단계</h3>
+<ul>
+<li><code>upper_mold_temp1</code>: 상부1 금형 온도 (예: 198, 250 …)<br>
+</li>
+<li><code>upper_mold_temp2</code>: 상부2 금형 온도 (예: 116, 113 …)<br>
+</li>
+<li><code>upper_mold_temp3</code>: 상부3 금형 온도 (예: 1449, 122 …)<br>
+</li>
+<li><code>lower_mold_temp1</code>: 하부1 금형 온도 (예: 234, 211 …)<br>
+</li>
+<li><code>lower_mold_temp2</code>: 하부2 금형 온도 (예: 316, 179 …)<br>
+</li>
+<li><code>lower_mold_temp3</code>: 하부3 금형 온도 (예: 1449, 208 …)<br>
+</li>
+<li><code>Coolant_temperature</code>: 냉각수 온도 (예: 34, 30 …)</li>
+</ul>
+</section>
+<section id="공정-속도" class="level3">
+<h3 class="anchored" data-anchor-id="공정-속도">공정 속도</h3>
+<ul>
+<li><code>facility_operation_cycleTime</code>: 전체 설비 사이클 시간 (예: 119, 98, 100 …)<br>
+</li>
+<li><code>production_cycletime</code>: 실제 생산 사이클 시간 (예: 120, 125, 123 …)</li>
+</ul>
+</section>
+<section id="품질-및-성능" class="level3">
+<h3 class="anchored" data-anchor-id="품질-및-성능">품질 및 성능</h3>
+<ul>
+<li><code>biscuit_thickness</code>: 주조물 두께 (예: 35, 48, 49 …)<br>
+</li>
+<li><code>physical_strength</code>: 제품 강도 (예: 700, 0 …)</li>
+</ul>
+</section>
+<section id="평가" class="level3">
+<h3 class="anchored" data-anchor-id="평가">평가</h3>
+<ul>
+<li><code>passorfail</code>: 합격 여부 (예: 0=불량, 1=합격)</li>
+</ul>
+</section>
+</section>
+<section id="데이터-로딩-및-기본-확인" class="level2">
+<h2 class="anchored" data-anchor-id="데이터-로딩-및-기본-확인">2.3 데이터 로딩 및 기본 확인</h2>
+<p>분석에 필요한 라이브러리를 불러오고 데이터를 읽어옵니다.</p>
+<div id="93eca942" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 필수 라이브러리 불러오기</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> StandardScaler</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">'ignore'</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 그래프 한글 깨짐 방지</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'font.family'</span>] <span class="op">=</span> <span class="st">'Malgun Gothic'</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'axes.unicode_minus'</span>] <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'seaborn-v0_8'</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 로딩</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> pd.read_csv(<span class="st">"./data/train.csv"</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>test <span class="op">=</span> pd.read_csv(<span class="st">"./data/test.csv"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"예시 데이터: "</span>, train.head(<span class="dv">3</span>))</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Train 데이터 크기:"</span>, train.shape)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Test 데이터 크기:"</span>, test.shape)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">컬럼 리스트:</span><span class="ch">\n</span><span class="st">"</span>, <span class="bu">list</span>(train.columns))</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">결측치 개수:</span><span class="ch">\n</span><span class="st">"</span>, train.isna().<span class="bu">sum</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>예시 데이터:     id          line           name                        mold_name  \
+0   0  전자교반 3라인 2호기  TM Carrier RH  TM Carrier RH-Semi-Solid DIE-06   
+1   1  전자교반 3라인 2호기  TM Carrier RH  TM Carrier RH-Semi-Solid DIE-06   
+2   2  전자교반 3라인 2호기  TM Carrier RH  TM Carrier RH-Semi-Solid DIE-06   
+
+         time      date  count working emergency_stop  molten_temp  ...  \
+0  2019-01-02  16:45:06    258      가동             ON        731.0  ...   
+1  2019-01-02  16:45:08    243      가동             ON        720.0  ...   
+2  2019-01-02  16:45:58    244      가동             ON        721.0  ...   
+
+   lower_mold_temp3  sleeve_temperature  physical_strength  \
+0            1449.0               550.0              700.0   
+1               NaN               481.0                0.0   
+2               NaN               481.0                0.0   
+
+   Coolant_temperature  EMS_operation_time    registration_time  passorfail  \
+0                 34.0                  23  2019-01-02 16:45:06         0.0   
+1                 30.0                  25  2019-01-02 16:45:08         0.0   
+2                 30.0                  25  2019-01-02 16:45:58         0.0   
+
+   tryshot_signal  mold_code  heating_furnace  
+0             NaN       8722              NaN  
+1             NaN       8412                B  
+2             NaN       8412                B  
+
+[3 rows x 32 columns]
+Train 데이터 크기: (73612, 32)
+Test 데이터 크기: (18403, 31)
+
+컬럼 리스트:
+ ['id', 'line', 'name', 'mold_name', 'time', 'date', 'count', 'working', 'emergency_stop', 'molten_temp', 'facility_operation_cycleTime', 'production_cycletime', 'low_section_speed', 'high_section_speed', 'molten_volume', 'cast_pressure', 'biscuit_thickness', 'upper_mold_temp1', 'upper_mold_temp2', 'upper_mold_temp3', 'lower_mold_temp1', 'lower_mold_temp2', 'lower_mold_temp3', 'sleeve_temperature', 'physical_strength', 'Coolant_temperature', 'EMS_operation_time', 'registration_time', 'passorfail', 'tryshot_signal', 'mold_code', 'heating_furnace']
+
+결측치 개수:
+ id                                  0
+line                                0
+name                                0
+mold_name                           0
+time                                0
+date                                0
+count                               0
+working                             1
+emergency_stop                      1
+molten_temp                      2261
+facility_operation_cycleTime        0
+production_cycletime                0
+low_section_speed                   1
+high_section_speed                  1
+molten_volume                   34992
+cast_pressure                       1
+biscuit_thickness                   1
+upper_mold_temp1                    1
+upper_mold_temp2                    1
+upper_mold_temp3                  313
+lower_mold_temp1                    1
+lower_mold_temp2                    1
+lower_mold_temp3                  313
+sleeve_temperature                  1
+physical_strength                   1
+Coolant_temperature                 1
+EMS_operation_time                  0
+registration_time                   0
+passorfail                          0
+tryshot_signal                  72368
+mold_code                           0
+heating_furnace                 40881
+dtype: int64</code></pre>
+</div>
+</div>
+</section>
+<section id="데이터-전처리-및-파생-변수-생성" class="level2">
+<h2 class="anchored" data-anchor-id="데이터-전처리-및-파생-변수-생성">2.4 데이터 전처리 및 파생 변수 생성</h2>
+<p>컬럼에 유니크 값이 1개인 경우 컬럼을 제거합니다.</p>
+<div id="20f0bbda" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(train.value_counts())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Series([], Name: count, dtype: int64)</code></pre>
+</div>
+</div>
+<p>데이터 분석과 모델링을 위해 불필요한 컬럼을 제거하고,<br>
+공정 특성을 잘 드러낼 수 있는 새로운 변수를 생성합니다.</p>
+<div id="6c7cf9d9" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 전처리 및 파생변수 생성</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># datetime &amp; hour 생성</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'datetime'</span>] <span class="op">=</span> pd.to_datetime(train[<span class="st">'date'</span>] <span class="op">+</span> <span class="st">" "</span> <span class="op">+</span> train[<span class="st">'time'</span>])</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'hour'</span>] <span class="op">=</span> train[<span class="st">'datetime'</span>].dt.hour</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># shift (Day/Night 교대조) 생성</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>first_hour <span class="op">=</span> train.loc[<span class="dv">0</span>, <span class="st">'hour'</span>]</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="dv">8</span> <span class="op">&lt;=</span> first_hour <span class="op">&lt;=</span> <span class="dv">19</span>:   <span class="co"># 08:00 ~ 19:59 → Day</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    current_shift <span class="op">=</span> <span class="st">"Day"</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:                       <span class="co"># 20:00 ~ 07:59 → Night</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    current_shift <span class="op">=</span> <span class="st">"Night"</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>shifts <span class="op">=</span> []</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(train)):</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        shifts.append(current_shift)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> train.loc[i, <span class="st">'count'</span>] <span class="op">&lt;</span> train.loc[i<span class="op">-</span><span class="dv">1</span>, <span class="st">'count'</span>]:  <span class="co"># count 감소 → 리셋</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> train.loc[i, <span class="st">'hour'</span>]</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="dv">8</span> <span class="op">&lt;=</span> h <span class="op">&lt;=</span> <span class="dv">19</span> <span class="kw">and</span> current_shift <span class="op">==</span> <span class="st">"Night"</span>) <span class="kw">or</span> (h <span class="op">&gt;=</span> <span class="dv">20</span> <span class="kw">or</span> h <span class="op">&lt;</span> <span class="dv">8</span> <span class="kw">and</span> current_shift <span class="op">==</span> <span class="st">"Day"</span>):</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>            current_shift <span class="op">=</span> <span class="st">"Night"</span> <span class="cf">if</span> current_shift <span class="op">==</span> <span class="st">"Day"</span> <span class="cf">else</span> <span class="st">"Day"</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    shifts.append(current_shift)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'shift'</span>] <span class="op">=</span> shifts</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"shift 컬럼 생성 완료 (Day/Night)"</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> train.sort_values(by<span class="op">=</span><span class="st">"datetime"</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="co"># 1) 글로벌 누적 count (전체 기간)</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>global_counts <span class="op">=</span> []</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>accum <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>prev_count <span class="op">=</span> train.loc[<span class="dv">0</span>, <span class="st">'count'</span>]</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, row <span class="kw">in</span> train.iterrows():</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    current_count <span class="op">=</span> row[<span class="st">'count'</span>]</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># count가 리셋된 경우</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> current_count <span class="op">&lt;</span> prev_count:</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>        accum <span class="op">+=</span> prev_count  <span class="co"># 지금까지 생산량을 누적</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    global_counts.append(accum <span class="op">+</span> current_count)</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    prev_count <span class="op">=</span> current_count</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'global_count'</span>] <span class="op">=</span> global_counts</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a><span class="co"># 2) 월별 누적 count</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'year_month'</span>] <span class="op">=</span> train[<span class="st">'datetime'</span>].dt.to_period(<span class="st">"M"</span>)  <span class="co"># 연-월 단위</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'monthly_count'</span>] <span class="op">=</span> train.groupby(<span class="st">'year_month'</span>).cumcount() <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="co"># 파생 변수 생성</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'real_time'</span>] <span class="op">=</span> train[<span class="st">'date'</span>] <span class="op">+</span> <span class="st">" "</span> <span class="op">+</span> train[<span class="st">'time'</span>]</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'speed_ratio'</span>] <span class="op">=</span> train[<span class="st">'low_section_speed'</span>] <span class="op">/</span> train[<span class="st">'high_section_speed'</span>]</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'pressure_speed_ratio'</span>] <span class="op">=</span> train[<span class="st">'cast_pressure'</span>] <span class="op">/</span> train[<span class="st">'high_section_speed'</span>]</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a><span class="co"># 불필요한 컬럼 제거</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a>drop_columns <span class="op">=</span> [ <span class="st">'id'</span>, <span class="st">'line'</span>, <span class="st">'name'</span>, <span class="st">'mold_name'</span>, <span class="st">'date'</span>, <span class="st">'time'</span>, <span class="st">'registration_time'</span>,<span class="st">'year_month'</span>,<span class="st">'hour'</span>]</span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> train.drop(columns<span class="op">=</span>drop_columns)</span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"최종 데이터셋 컬럼 수:"</span>, <span class="bu">len</span>(train.columns))</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"최종 데이터셋 예시:"</span>)</span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(train.head(<span class="dv">10</span>)[[<span class="st">'datetime'</span>,<span class="st">'count'</span>,<span class="st">'shift'</span>,<span class="st">'real_time'</span>,<span class="st">'speed_ratio'</span>,<span class="st">'pressure_speed_ratio'</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>shift 컬럼 생성 완료 (Day/Night)
+최종 데이터셋 컬럼 수: 32
+최종 데이터셋 예시:
+             datetime  count shift            real_time  speed_ratio  \
+0 2019-01-02 16:45:06    258   Day  16:45:06 2019-01-02     0.982143   
+1 2019-01-02 16:45:08    243   Day  16:45:08 2019-01-02     1.000000   
+2 2019-01-02 16:45:58    244   Day  16:45:58 2019-01-02     1.000000   
+3 2019-01-02 16:48:03    245   Day  16:48:03 2019-01-02     1.027523   
+4 2019-01-02 16:50:08    246   Day  16:50:08 2019-01-02     0.990909   
+5 2019-01-02 16:52:13    247   Day  16:52:13 2019-01-02     1.000000   
+6 2019-01-02 16:55:18    248   Day  16:55:18 2019-01-02     0.981982   
+7 2019-01-02 16:57:20    249   Day  16:57:20 2019-01-02     1.018519   
+8 2019-01-02 16:59:28    250   Day  16:59:28 2019-01-02     0.981982   
+9 2019-01-02 17:01:27    251   Day  17:01:27 2019-01-02     1.027778   
+
+   pressure_speed_ratio  
+0              2.955357  
+1              2.834862  
+2              2.834862  
+3              2.825688  
+4              2.809091  
+5              2.800000  
+6              2.774775  
+7              2.861111  
+8              2.792793  
+9              2.851852  </code></pre>
+</div>
+</div>
+<p>train.loc[:,[‘datetime’, ‘shift’]]</p>
+</section>
+<section id="데이터-전처리" class="level2">
+<h2 class="anchored" data-anchor-id="데이터-전처리">2.5 데이터 전처리</h2>
+<section id="molten_temp" class="level3">
+<h3 class="anchored" data-anchor-id="molten_temp">molten_temp</h3>
+<div id="f6d0509d" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.patches <span class="im">as</span> patches</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># OS에 맞게 폰트 설정 (Windows 기준: Malgun Gothic)</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'font.family'</span>] <span class="op">=</span> <span class="st">'Malgun Gothic'</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'axes.unicode_minus'</span>] <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 로드</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">'./data/train.csv'</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> df.copy()</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co"># =======================</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Molten Temperature</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="co"># =======================</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"[Molten Temperature - 용융 온도]"</span>)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""금속이 용융된 후 주입되는 시점의 센서 측정 온도를 나타냅니다."""</span>)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. 시각화: 분포 확인 -&gt; Boxplot (불량/양품 비교)</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="co"># 600℃ 이상 데이터만 추출</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>train_over600 <span class="op">=</span> train[train[<span class="st">'molten_temp'</span>] <span class="op">&gt;=</span> <span class="dv">600</span>]</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="co"># 양품(0)과 불량(1) 데이터 분리</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>good <span class="op">=</span> train_over600[train_over600[<span class="st">'passorfail'</span>] <span class="op">==</span> <span class="dv">0</span>][<span class="st">'molten_temp'</span>]</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>bad  <span class="op">=</span> train_over600[train_over600[<span class="st">'passorfail'</span>] <span class="op">==</span> <span class="dv">1</span>][<span class="st">'molten_temp'</span>]</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="co"># 최소/최대 값 계산</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>good_min, good_max <span class="op">=</span> good.<span class="bu">min</span>(), good.<span class="bu">max</span>()</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>bad_min, bad_max <span class="op">=</span> bad.<span class="bu">min</span>(), bad.<span class="bu">max</span>()</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="co"># 출력</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"""양품(0)과 불량(1)의 분포 차이를 비교하여 온도 기준이 품질에 미치는 영향을 확인할 수 있습니다.</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="ss">600℃ 이하에서는 공정 에러일 확률이 높아 알람 조건으로 활용할 수 있습니다.</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="ss">600℃ 이상에서는 양품의 경우 최소 </span><span class="sc">{</span>good_min<span class="sc">:.1f}</span><span class="ss">℃, 최대 </span><span class="sc">{</span>good_max<span class="sc">:.1f}</span><span class="ss">℃의 범위 값을 가지고,</span></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a><span class="ss">불량의 경우 최소 </span><span class="sc">{</span>bad_min<span class="sc">:.1f}</span><span class="ss">℃, 최대 </span><span class="sc">{</span>bad_max<span class="sc">:.1f}</span><span class="ss">℃의 범위 값을 가지는 것을 확인하였습니다.</span></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a><span class="ss">"""</span>)</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a><span class="co"># Subplot 설정</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>), sharey<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="co"># (1.) 전체 데이터 박스플롯 (600℃ 이상 영역 강조)</span></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'passorfail'</span>, y<span class="op">=</span><span class="st">'molten_temp'</span>, data<span class="op">=</span>train, ax<span class="op">=</span>axes[<span class="dv">0</span>])</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Molten Temperature (전체 데이터)"</span>)</span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"Pass/Fail"</span>)</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">"Molten Temperature (℃)"</span>)</span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="op">-</span><span class="dv">5</span>, <span class="dv">750</span>)  <span class="co"># y축 600부터 시작</span></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].grid(axis<span class="op">=</span><span class="st">'y'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a><span class="co"># 600℃ 이하 영역 강조</span></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a>rect_error <span class="op">=</span> patches.Rectangle(</span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a>    (<span class="op">-</span><span class="fl">0.5</span>, axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>]),  <span class="co"># x 시작, y축 최솟값</span></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a>    <span class="fl">2.0</span>,                            <span class="co"># 너비 (passorfail 0과 1 포함)</span></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a>    <span class="dv">600</span> <span class="op">-</span> axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>],    <span class="co"># 높이: y축 최솟값 ~ 600</span></span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a>    linewidth<span class="op">=</span><span class="dv">1</span>, edgecolor<span class="op">=</span><span class="st">'red'</span>, facecolor<span class="op">=</span><span class="st">'red'</span>, alpha<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'공정 에러 알람'</span></span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].add_patch(rect_error)</span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a><span class="co"># 텍스트 추가</span></span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].text(</span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="fl">0.5</span>,                          <span class="co"># x 위치 (양품/불량 중앙)</span></span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>] <span class="op">+</span> (<span class="dv">600</span> <span class="op">-</span> axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>])<span class="op">/</span><span class="dv">2</span>,  <span class="co"># y 중앙</span></span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="st">"공정 에러 알람"</span>,</span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">'red'</span>,</span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a>    ha<span class="op">=</span><span class="st">'center'</span>,</span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a>    va<span class="op">=</span><span class="st">'center'</span>,</span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a>    fontsize<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a>    fontweight<span class="op">=</span><span class="st">'bold'</span></span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a><span class="co"># (2.) 600℃ 이상 데이터만 박스플롯 (Zoom-in)</span></span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'passorfail'</span>, y<span class="op">=</span><span class="st">'molten_temp'</span>, data<span class="op">=</span>train_over600, ax<span class="op">=</span>axes[<span class="dv">1</span>])</span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Molten Temperature (600℃ 이상 데이터)"</span>)</span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"Pass/Fail"</span>)</span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylabel(<span class="st">""</span>)</span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="dv">600</span>, <span class="dv">750</span>)  <span class="co"># y축 600부터 시작</span></span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].grid(axis<span class="op">=</span><span class="st">'y'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a><span class="co"># 레이아웃 정리</span></span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. 결측치 처리 (최빈값으로 대체) + 라벨 생성 (600도 기준)</span></span>
+<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb7-106"><a href="#cb7-106" aria-hidden="true" tabindex="-1"></a>mode_temp <span class="op">=</span> train[<span class="st">'molten_temp'</span>].mode()[<span class="dv">0</span>]</span>
+<span id="cb7-107"><a href="#cb7-107" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'molten_temp'</span>] <span class="op">=</span> train[<span class="st">'molten_temp'</span>].fillna(mode_temp)</span>
+<span id="cb7-108"><a href="#cb7-108" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"molten_temp 결측치 처리: 최빈값 </span><span class="sc">{</span>mode_temp<span class="sc">}</span><span class="ss">로 대체"</span>)</span>
+<span id="cb7-109"><a href="#cb7-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-110"><a href="#cb7-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-111"><a href="#cb7-111" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'molten_temp_label'</span>] <span class="op">=</span> (train[<span class="st">'molten_temp'</span>] <span class="op">&gt;=</span> <span class="dv">600</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb7-112"><a href="#cb7-112" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"라벨 생성: molten_temp &gt;= 600 → 1(양품), &lt; 600 → 0(불량)</span><span class="ch">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[Molten Temperature - 용융 온도]
+금속이 용융된 후 주입되는 시점의 센서 측정 온도를 나타냅니다.
+양품(0)과 불량(1)의 분포 차이를 비교하여 온도 기준이 품질에 미치는 영향을 확인할 수 있습니다.
+
+600℃ 이하에서는 공정 에러일 확률이 높아 알람 조건으로 활용할 수 있습니다.
+
+600℃ 이상에서는 양품의 경우 최소 626.0℃, 최대 735.0℃의 범위 값을 가지고,
+불량의 경우 최소 660.0℃, 최대 735.0℃의 범위 값을 가지는 것을 확인하였습니다.
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="res_files/figure-html/cell-5-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>molten_temp 결측치 처리: 최빈값 731.0로 대체
+라벨 생성: molten_temp &gt;= 600 → 1(양품), &lt; 600 → 0(불량)
+</code></pre>
+</div>
+</div>
+</section>
+<section id="mold-code" class="level3">
+<h3 class="anchored" data-anchor-id="mold-code">Mold Code</h3>
+<div id="5b6b4f77" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"[Mold Code - 금형 코드]"</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"주조 시 사용된 금형을 나타내며, 금형별 특성 차이가 불량률에 영향을 줄 수 있습니다."</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 시각화</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># mold_code를 문자형으로 변환</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'mold_code'</span>] <span class="op">=</span> train[<span class="st">'mold_code'</span>].astype(<span class="bu">str</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># mold_code별 불량률(%) 계산</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> (</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    train.groupby(<span class="st">"mold_code"</span>)[<span class="st">"passorfail"</span>]</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    .agg(<span class="kw">lambda</span> x: (x.<span class="bu">sum</span>() <span class="op">/</span> <span class="bu">len</span>(x)) <span class="op">*</span> <span class="dv">100</span>)  <span class="co"># 불량률 % 변환</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    .reset_index()</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> mold_fail_rate.rename(columns<span class="op">=</span>{<span class="st">'passorfail'</span>: <span class="st">'fail_rate'</span>}).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 최대/최소 불량률 찾기</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>max_row <span class="op">=</span> mold_fail_rate.loc[mold_fail_rate[<span class="st">'fail_rate'</span>].idxmax()]</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>min_row <span class="op">=</span> mold_fail_rate.loc[mold_fail_rate[<span class="st">'fail_rate'</span>].idxmin()]</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="co"># 평균 불량률 계산</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>avg_rate <span class="op">=</span> mold_fail_rate[<span class="st">'fail_rate'</span>].mean().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="co"># 설명 출력</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="st">금형 코드를 기준으로 각 금형을 사용하였을 때 불량률을 비교하였습니다.</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="st">불량률이 높을수록 해당 금형에서 발생하는 품질 문제가 많음을 의미합니다.</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="st">전체 금형에서 평균 불량률은 </span><span class="sc">{avg_rate:.2f}</span><span class="st">%로 나타났으며,</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="st">그 중 '</span><span class="sc">{max_code}</span><span class="st">' 금형 사용 시 </span><span class="sc">{max_rate:.2f}</span><span class="st">%로 최대 불량률이 발생하고,</span></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a><span class="st">'</span><span class="sc">{min_code}</span><span class="st">' 금형 사용 시 </span><span class="sc">{min_rate:.2f}</span><span class="st">%로 최소 불량률이 발생하는 것으로 확인되었습니다.</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>.<span class="bu">format</span>(</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>        avg_rate<span class="op">=</span>avg_rate,</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>        max_rate<span class="op">=</span>max_row[<span class="st">'fail_rate'</span>],</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>        max_code<span class="op">=</span>max_row[<span class="st">'mold_code'</span>],</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>        min_rate<span class="op">=</span>min_row[<span class="st">'fail_rate'</span>],</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>        min_code<span class="op">=</span>min_row[<span class="st">'mold_code'</span>],</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a><span class="co"># mold_code별 불량률(%) 계산</span></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> (</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>    train.groupby(<span class="st">"mold_code"</span>)[<span class="st">"passorfail"</span>]</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>    .agg(<span class="kw">lambda</span> x: (x.<span class="bu">sum</span>() <span class="op">/</span> <span class="bu">len</span>(x)) <span class="op">*</span> <span class="dv">100</span>)  <span class="co"># 불량률 % 변환</span></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>    .reset_index()</span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> mold_fail_rate.rename(columns<span class="op">=</span>{<span class="st">'passorfail'</span>: <span class="st">'fail_rate'</span>}).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a><span class="co"># 내림차순 정렬</span></span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> mold_fail_rate.sort_values(by<span class="op">=</span><span class="st">"fail_rate"</span>, ascending<span class="op">=</span><span class="va">False</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a><span class="co"># 시각화</span></span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.barplot(</span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>mold_fail_rate,</span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">"mold_code"</span>,</span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">"fail_rate"</span>,</span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a>    errorbar<span class="op">=</span><span class="va">None</span>,   <span class="co"># ✅ ci=None → errorbar=None 으로 수정</span></span>
+<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a>    order<span class="op">=</span>mold_fail_rate[<span class="st">"mold_code"</span>],  <span class="co"># 정렬된 순서 반영</span></span>
+<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-65"><a href="#cb10-65" aria-hidden="true" tabindex="-1"></a><span class="co"># 타이틀 &amp; 라벨</span></span>
+<span id="cb10-66"><a href="#cb10-66" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Mold Code별 불량률 (%) - 내림차순"</span>)</span>
+<span id="cb10-67"><a href="#cb10-67" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Mold Code"</span>)</span>
+<span id="cb10-68"><a href="#cb10-68" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Fail Rate (%)"</span>)</span>
+<span id="cb10-69"><a href="#cb10-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-70"><a href="#cb10-70" aria-hidden="true" tabindex="-1"></a><span class="co"># 각 바 위에 값 표시 (소수 둘째자리, 굵은 글씨)</span></span>
+<span id="cb10-71"><a href="#cb10-71" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> ax.patches:</span>
+<span id="cb10-72"><a href="#cb10-72" aria-hidden="true" tabindex="-1"></a>    value <span class="op">=</span> <span class="bu">round</span>(p.get_height(), <span class="dv">2</span>)</span>
+<span id="cb10-73"><a href="#cb10-73" aria-hidden="true" tabindex="-1"></a>    ax.text(</span>
+<span id="cb10-74"><a href="#cb10-74" aria-hidden="true" tabindex="-1"></a>        p.get_x() <span class="op">+</span> p.get_width() <span class="op">/</span> <span class="dv">2</span>,  <span class="co"># x 위치 (바 가운데)</span></span>
+<span id="cb10-75"><a href="#cb10-75" aria-hidden="true" tabindex="-1"></a>        p.get_height() <span class="op">+</span> <span class="fl">0.2</span>,          <span class="co"># y 위치 (바 위쪽)</span></span>
+<span id="cb10-76"><a href="#cb10-76" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">%"</span>,                   <span class="co"># % 표시</span></span>
+<span id="cb10-77"><a href="#cb10-77" aria-hidden="true" tabindex="-1"></a>        ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"bottom"</span>, </span>
+<span id="cb10-78"><a href="#cb10-78" aria-hidden="true" tabindex="-1"></a>        <span class="co"># fontweight="bold"</span></span>
+<span id="cb10-79"><a href="#cb10-79" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-80"><a href="#cb10-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-81"><a href="#cb10-81" aria-hidden="true" tabindex="-1"></a><span class="co"># y축 범위 조정 (여유 공간 확보)</span></span>
+<span id="cb10-82"><a href="#cb10-82" aria-hidden="true" tabindex="-1"></a>plt.ylim(<span class="dv">0</span>, mold_fail_rate[<span class="st">"fail_rate"</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="dv">5</span>)</span>
+<span id="cb10-83"><a href="#cb10-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-84"><a href="#cb10-84" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb10-85"><a href="#cb10-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-86"><a href="#cb10-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-87"><a href="#cb10-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-88"><a href="#cb10-88" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 처리</span></span>
+<span id="cb10-89"><a href="#cb10-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-90"><a href="#cb10-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-91"><a href="#cb10-91" aria-hidden="true" tabindex="-1"></a><span class="co"># 원-핫 인코딩 (One-Hot Encoding)</span></span>
+<span id="cb10-92"><a href="#cb10-92" aria-hidden="true" tabindex="-1"></a>mold_dummies <span class="op">=</span> pd.get_dummies(train[<span class="st">'mold_code'</span>], prefix<span class="op">=</span><span class="st">'mold'</span>)</span>
+<span id="cb10-93"><a href="#cb10-93" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> pd.concat([train, mold_dummies], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb10-94"><a href="#cb10-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-95"><a href="#cb10-95" aria-hidden="true" tabindex="-1"></a><span class="co"># 확인</span></span>
+<span id="cb10-96"><a href="#cb10-96" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Mold Code 데이터 처리: 원-핫 인코딩 진행, 결측치 없음"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[Mold Code - 금형 코드]
+주조 시 사용된 금형을 나타내며, 금형별 특성 차이가 불량률에 영향을 줄 수 있습니다.
+
+금형 코드를 기준으로 각 금형을 사용하였을 때 불량률을 비교하였습니다.
+불량률이 높을수록 해당 금형에서 발생하는 품질 문제가 많음을 의미합니다.
+
+전체 금형에서 평균 불량률은 4.54%로 나타났으며,
+그 중 '8722' 금형 사용 시 5.32%로 최대 불량률이 발생하고,
+'8412' 금형 사용 시 3.44%로 최소 불량률이 발생하는 것으로 확인되었습니다.
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="res_files/figure-html/cell-6-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mold Code 데이터 처리: 원-핫 인코딩 진행, 결측치 없음</code></pre>
+</div>
+</div>
+</section>
+<section id="heating-furnace" class="level3">
+<h3 class="anchored" data-anchor-id="heating-furnace">Heating Furnace</h3>
+<div id="866ecf6f" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""[Mold Code - 가열로]"""</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"[Heating Furnace - 가열로]"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""금속을 용해 후 주입 전까지 일정 온도로 유지하는 가열로입니다.</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="st">A, B 두 종류가 존재하며, 측정되지 않은 데이터는 결측치로 존재할 수 있습니다.</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="st">이는 주조 품질에 영향을 미치는 주요 공정 요소 중 하나입니다."""</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Heating Furnace별 불량률 계산 (백분율)</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 결측치는 이후 None으로 처리</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'heating_furnace'</span>] <span class="op">=</span> train[<span class="st">'heating_furnace'</span>].fillna(<span class="st">'None'</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>furnace_fail_rate <span class="op">=</span> (</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    train.groupby(<span class="st">"heating_furnace"</span>)[<span class="st">"passorfail"</span>]</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    .agg(<span class="kw">lambda</span> x: (x.<span class="bu">sum</span>() <span class="op">/</span> <span class="bu">len</span>(x)) <span class="op">*</span> <span class="dv">100</span>)  <span class="co"># 불량률 % 계산</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    .reset_index()</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>furnace_fail_rate <span class="op">=</span> furnace_fail_rate.rename(columns<span class="op">=</span>{<span class="st">'passorfail'</span>: <span class="st">'fail_rate'</span>}).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 내림차순 정렬</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>furnace_fail_rate <span class="op">=</span> furnace_fail_rate.sort_values(by<span class="op">=</span><span class="st">"fail_rate"</span>, ascending<span class="op">=</span><span class="va">False</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="co"># 최대/최소/평균 불량률 계산</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>max_row <span class="op">=</span> furnace_fail_rate.loc[furnace_fail_rate[<span class="st">'fail_rate'</span>].idxmax()]</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>min_row <span class="op">=</span> furnace_fail_rate.loc[furnace_fail_rate[<span class="st">'fail_rate'</span>].idxmin()]</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>avg_rate <span class="op">=</span> furnace_fail_rate[<span class="st">'fail_rate'</span>].mean().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"""Heating Furnace별 불량률을 비교하였습니다.</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="ss">불량률이 높을수록 해당 가열로에서 발생하는 품질 문제가 많음을 의미합니다.</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="ss">전체 가열로에서 평균 불량률은 </span><span class="sc">{</span>avg_rate<span class="sc">:.2f}</span><span class="ss">%로 나타났으며,</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="ss">그 중 '</span><span class="sc">{</span>max_row[<span class="st">'heating_furnace'</span>]<span class="sc">}</span><span class="ss">' 가열로 사용 시 </span><span class="sc">{</span>max_row[<span class="st">'fail_rate'</span>]<span class="sc">:.2f}</span><span class="ss">%로 최대 불량률이 발생하고,</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="ss">'</span><span class="sc">{</span>min_row[<span class="st">'heating_furnace'</span>]<span class="sc">}</span><span class="ss">' 가열로 사용 시 </span><span class="sc">{</span>min_row[<span class="st">'fail_rate'</span>]<span class="sc">:.2f}</span><span class="ss">%로 최소 불량률이 발생하는 것으로 확인되었습니다."""</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Barplot 시각화</span></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">6</span>,<span class="dv">4</span>))</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.barplot(</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>furnace_fail_rate,</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">"heating_furnace"</span>,</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">"fail_rate"</span>,</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>    errorbar<span class="op">=</span><span class="va">None</span>,  <span class="co"># ci=None 대신 최신 버전 대응</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>    order<span class="op">=</span>furnace_fail_rate[<span class="st">"heating_furnace"</span>]</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a><span class="co"># 타이틀 &amp; 라벨</span></span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Heating Furnace별 불량률 (%) - 내림차순"</span>)</span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Heating Furnace"</span>)</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Fail Rate (%)"</span>)</span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a><span class="co"># 각 바 위에 값 표시 (소수 둘째자리, 굵은 글씨)</span></span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> ax.patches:</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>    value <span class="op">=</span> <span class="bu">round</span>(p.get_height(), <span class="dv">2</span>)</span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>    ax.text(</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>        p.get_x() <span class="op">+</span> p.get_width() <span class="op">/</span> <span class="dv">2</span>,</span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>        p.get_height() <span class="op">+</span> <span class="fl">0.5</span>,</span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">%"</span>,</span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>        ha<span class="op">=</span><span class="st">"center"</span>,</span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>        va<span class="op">=</span><span class="st">"bottom"</span>,</span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a><span class="co"># y축 범위 설정 (여유 공간 확보)</span></span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>plt.ylim(<span class="dv">0</span>, furnace_fail_rate[<span class="st">"fail_rate"</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="dv">5</span>)</span>
+<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a><span class="co"># 결측치 처리</span></span>
+<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a><span class="co"># 결측치는 'None'으로 대체하고 원-핫 인코딩</span></span>
+<span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'heating_furnace'</span>] <span class="op">=</span> train[<span class="st">'heating_furnace'</span>].fillna(<span class="st">'None'</span>)</span>
+<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a>furnace_dummies <span class="op">=</span> pd.get_dummies(train[<span class="st">'heating_furnace'</span>], prefix<span class="op">=</span><span class="st">'furnace'</span>)</span>
+<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> pd.concat([train, furnace_dummies], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"heating furnace 데이터 처리: 결측치는 'None'으로 처리 후 원-핫 인코딩 진행"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[Mold Code - 가열로]
+[Heating Furnace - 가열로]
+금속을 용해 후 주입 전까지 일정 온도로 유지하는 가열로입니다.
+A, B 두 종류가 존재하며, 측정되지 않은 데이터는 결측치로 존재할 수 있습니다.
+이는 주조 품질에 영향을 미치는 주요 공정 요소 중 하나입니다.
+Heating Furnace별 불량률을 비교하였습니다.
+불량률이 높을수록 해당 가열로에서 발생하는 품질 문제가 많음을 의미합니다.
+전체 가열로에서 평균 불량률은 4.36%로 나타났으며,
+그 중 'B' 가열로 사용 시 4.66%로 최대 불량률이 발생하고,
+'A' 가열로 사용 시 3.80%로 최소 불량률이 발생하는 것으로 확인되었습니다.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="res_files/figure-html/cell-7-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>heating furnace 데이터 처리: 결측치는 'None'으로 처리 후 원-핫 인코딩 진행</code></pre>
+</div>
+</div>
+<!-- -->
+
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="sourceCode" id="cb16" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "다이캐스팅 제조 공정 데이터 탐색적 분석 (EDA)"</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Casting Defect Prediction &amp; Process Insight"</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Data Analysis Team"</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> today</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co">    theme: cosmo          # 기본 테마</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true             # 목차 표시</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-title: "Contents" # 목차 제목</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-location: right   # 목차 오른쪽 고정</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-float: true       # 스크롤 시 따라다니기</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 3          # 목차 깊이</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true       # 코드 접기/펼치기 버튼</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true      # 코드 툴바(실행/복사) 활성화</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co">    code-copy: true       # 복사 버튼</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co">    css: styles.css       # 추가 디자인 적용용 CSS 연결</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="an">execute:</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="co">  echo: true              # 코드 출력 여부</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co">  warning: false          # 경고 숨김</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="co">  error: false            # 오류 숨김</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="co">  cache: false            # 캐시 사용 X</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="fu"># 1. 프로젝트 개요</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1.1 목적</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>본 프로젝트는 **다이캐스팅 제조 공정 데이터**를 분석하여  </span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>제품 불량(<span class="in">`passorfail=0`</span>) 발생 원인을 탐색하고,  </span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>품질 향상 및 스마트팩토리 기반 **예측 모델링**의 기초를 마련하는 것을 목적으로 합니다.  </span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1.2 프로젝트 의의</span></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**공정 품질 관리**: 불량 발생 가능성이 높은 공정 조건을 사전 탐지  </span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**데이터 기반 개선**: 감이 아닌 데이터 분석을 통한 의사결정 지원  </span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**자동화 가능성**: 추후 머신러닝 기반 불량 예측 시스템 구축 기반  </span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a><span class="fu"># 2. 데이터 개요</span></span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2.1 데이터셋 정보</span></span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**train.csv**: 73,612행, 32열 (학습 데이터)  </span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**test.csv**: 18,403행, 31열 (테스트 데이터)  </span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**목표 변수**: <span class="in">`passorfail`</span> (0=불량, 1=합격)  </span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2.2 주요 변수 설명 (예시 포함)</span></span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a><span class="fu">###  기본 정보</span></span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`id`</span>: 고유 번호 (예: 0, 1, 2 …)  </span>
+<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`line`</span>: 생산 라인 이름 (예: 전자교반 3라인 2호기)  </span>
+<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`name`</span>: 장비 이름 (예: TM Carrier RH)  </span>
+<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`mold_name`</span>: 금형 이름 (예: TM Carrier RH-Semi-Solid DIE-06)  </span>
+<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`date`</span>: 측정 날짜 (예: 2019-01-02)  </span>
+<span id="cb16-60"><a href="#cb16-60" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`time`</span>: 측정 시간 (예: 16<span class="sc">:45:</span>06)  </span>
+<span id="cb16-61"><a href="#cb16-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-62"><a href="#cb16-62" aria-hidden="true" tabindex="-1"></a><span class="fu">###  공정 상태</span></span>
+<span id="cb16-63"><a href="#cb16-63" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`count`</span>: 누적 제품 개수 (예: 258, 243, 244 …)  </span>
+<span id="cb16-64"><a href="#cb16-64" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`working`</span>: 장비 가동 여부 (예: 가동, 정지)  </span>
+<span id="cb16-65"><a href="#cb16-65" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`emergency_stop`</span>: 비상 정지 여부 (예: ON, OFF)  </span>
+<span id="cb16-66"><a href="#cb16-66" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`registration_time`</span>: 데이터 등록 시각 (예: 2019-01-02 16:45)  </span>
+<span id="cb16-67"><a href="#cb16-67" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`tryshot_signal`</span>: 측정 딜레이 여부 (예: 공백 또는 신호 값)  </span>
+<span id="cb16-68"><a href="#cb16-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-69"><a href="#cb16-69" aria-hidden="true" tabindex="-1"></a><span class="fu">###  용탕 단계</span></span>
+<span id="cb16-70"><a href="#cb16-70" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`molten_temp`</span>: 용탕 온도 (예: 731, 720, 722 …)  </span>
+<span id="cb16-71"><a href="#cb16-71" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`heating_furnace`</span>: 용해로 코드 (예: A, B, None)  </span>
+<span id="cb16-72"><a href="#cb16-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-73"><a href="#cb16-73" aria-hidden="true" tabindex="-1"></a><span class="fu">###  충진 단계</span></span>
+<span id="cb16-74"><a href="#cb16-74" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`sleeve_temperature`</span>: 주입 관 온도 (예: 550, 481 …)  </span>
+<span id="cb16-75"><a href="#cb16-75" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`EMS_operation_time`</span>: 전자 교반 시간 (예: 23, 25 …)  </span>
+<span id="cb16-76"><a href="#cb16-76" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`low_section_speed`</span>: 저속 주입 속도 (예: 110, 109, 112 …)  </span>
+<span id="cb16-77"><a href="#cb16-77" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`high_section_speed`</span>: 고속 주입 속도 (예: 112, 125, 123 …)  </span>
+<span id="cb16-78"><a href="#cb16-78" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`mold_code`</span>: 금형 코드 (예: 8722, 8412, B …)  </span>
+<span id="cb16-79"><a href="#cb16-79" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`molten_volume`</span>: 주입 금속 양 (예: 75, 309 …)  </span>
+<span id="cb16-80"><a href="#cb16-80" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`cast_pressure`</span>: 주입 압력 (예: 331, 309, 308 …)  </span>
+<span id="cb16-81"><a href="#cb16-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-82"><a href="#cb16-82" aria-hidden="true" tabindex="-1"></a><span class="fu">###  냉각 단계</span></span>
+<span id="cb16-83"><a href="#cb16-83" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`upper_mold_temp1`</span>: 상부1 금형 온도 (예: 198, 250 …)  </span>
+<span id="cb16-84"><a href="#cb16-84" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`upper_mold_temp2`</span>: 상부2 금형 온도 (예: 116, 113 …)  </span>
+<span id="cb16-85"><a href="#cb16-85" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`upper_mold_temp3`</span>: 상부3 금형 온도 (예: 1449, 122 …)  </span>
+<span id="cb16-86"><a href="#cb16-86" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`lower_mold_temp1`</span>: 하부1 금형 온도 (예: 234, 211 …)  </span>
+<span id="cb16-87"><a href="#cb16-87" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`lower_mold_temp2`</span>: 하부2 금형 온도 (예: 316, 179 …)  </span>
+<span id="cb16-88"><a href="#cb16-88" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`lower_mold_temp3`</span>: 하부3 금형 온도 (예: 1449, 208 …)  </span>
+<span id="cb16-89"><a href="#cb16-89" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`Coolant_temperature`</span>: 냉각수 온도 (예: 34, 30 …)  </span>
+<span id="cb16-90"><a href="#cb16-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-91"><a href="#cb16-91" aria-hidden="true" tabindex="-1"></a><span class="fu">###  공정 속도</span></span>
+<span id="cb16-92"><a href="#cb16-92" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`facility_operation_cycleTime`</span>: 전체 설비 사이클 시간 (예: 119, 98, 100 …)  </span>
+<span id="cb16-93"><a href="#cb16-93" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`production_cycletime`</span>: 실제 생산 사이클 시간 (예: 120, 125, 123 …)  </span>
+<span id="cb16-94"><a href="#cb16-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-95"><a href="#cb16-95" aria-hidden="true" tabindex="-1"></a><span class="fu">###  품질 및 성능</span></span>
+<span id="cb16-96"><a href="#cb16-96" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`biscuit_thickness`</span>: 주조물 두께 (예: 35, 48, 49 …)  </span>
+<span id="cb16-97"><a href="#cb16-97" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`physical_strength`</span>: 제품 강도 (예: 700, 0 …)  </span>
+<span id="cb16-98"><a href="#cb16-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-99"><a href="#cb16-99" aria-hidden="true" tabindex="-1"></a><span class="fu">###  평가</span></span>
+<span id="cb16-100"><a href="#cb16-100" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`passorfail`</span>: 합격 여부 (예: 0=불량, 1=합격)  </span>
+<span id="cb16-101"><a href="#cb16-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-102"><a href="#cb16-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-103"><a href="#cb16-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-104"><a href="#cb16-104" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2.3 데이터 로딩 및 기본 확인</span></span>
+<span id="cb16-105"><a href="#cb16-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-106"><a href="#cb16-106" aria-hidden="true" tabindex="-1"></a>분석에 필요한 라이브러리를 불러오고 데이터를 읽어옵니다.  </span>
+<span id="cb16-107"><a href="#cb16-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-110"><a href="#cb16-110" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-111"><a href="#cb16-111" aria-hidden="true" tabindex="-1"></a><span class="co"># 필수 라이브러리 불러오기</span></span>
+<span id="cb16-112"><a href="#cb16-112" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb16-113"><a href="#cb16-113" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb16-114"><a href="#cb16-114" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb16-115"><a href="#cb16-115" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb16-116"><a href="#cb16-116" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> StandardScaler</span>
+<span id="cb16-117"><a href="#cb16-117" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb16-118"><a href="#cb16-118" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">'ignore'</span>)</span>
+<span id="cb16-119"><a href="#cb16-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-120"><a href="#cb16-120" aria-hidden="true" tabindex="-1"></a><span class="co"># 그래프 한글 깨짐 방지</span></span>
+<span id="cb16-121"><a href="#cb16-121" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'font.family'</span>] <span class="op">=</span> <span class="st">'Malgun Gothic'</span></span>
+<span id="cb16-122"><a href="#cb16-122" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'axes.unicode_minus'</span>] <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb16-123"><a href="#cb16-123" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'seaborn-v0_8'</span>)</span>
+<span id="cb16-124"><a href="#cb16-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-125"><a href="#cb16-125" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 로딩</span></span>
+<span id="cb16-126"><a href="#cb16-126" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> pd.read_csv(<span class="st">"./data/train.csv"</span>)</span>
+<span id="cb16-127"><a href="#cb16-127" aria-hidden="true" tabindex="-1"></a>test <span class="op">=</span> pd.read_csv(<span class="st">"./data/test.csv"</span>)</span>
+<span id="cb16-128"><a href="#cb16-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-129"><a href="#cb16-129" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"예시 데이터: "</span>, train.head(<span class="dv">3</span>))</span>
+<span id="cb16-130"><a href="#cb16-130" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Train 데이터 크기:"</span>, train.shape)</span>
+<span id="cb16-131"><a href="#cb16-131" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Test 데이터 크기:"</span>, test.shape)</span>
+<span id="cb16-132"><a href="#cb16-132" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">컬럼 리스트:</span><span class="ch">\n</span><span class="st">"</span>, <span class="bu">list</span>(train.columns))</span>
+<span id="cb16-133"><a href="#cb16-133" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">결측치 개수:</span><span class="ch">\n</span><span class="st">"</span>, train.isna().<span class="bu">sum</span>())</span>
+<span id="cb16-134"><a href="#cb16-134" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-135"><a href="#cb16-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-136"><a href="#cb16-136" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2.4 데이터 전처리 및 파생 변수 생성</span></span>
+<span id="cb16-137"><a href="#cb16-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-138"><a href="#cb16-138" aria-hidden="true" tabindex="-1"></a>컬럼에 유니크 값이 1개인 경우 컬럼을 제거합니다.</span>
+<span id="cb16-139"><a href="#cb16-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-142"><a href="#cb16-142" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-143"><a href="#cb16-143" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(train.value_counts())</span>
+<span id="cb16-144"><a href="#cb16-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-145"><a href="#cb16-145" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-146"><a href="#cb16-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-147"><a href="#cb16-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-148"><a href="#cb16-148" aria-hidden="true" tabindex="-1"></a>데이터 분석과 모델링을 위해 불필요한 컬럼을 제거하고,  </span>
+<span id="cb16-149"><a href="#cb16-149" aria-hidden="true" tabindex="-1"></a>공정 특성을 잘 드러낼 수 있는 새로운 변수를 생성합니다.</span>
+<span id="cb16-150"><a href="#cb16-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-153"><a href="#cb16-153" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-154"><a href="#cb16-154" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 전처리 및 파생변수 생성</span></span>
+<span id="cb16-155"><a href="#cb16-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-156"><a href="#cb16-156" aria-hidden="true" tabindex="-1"></a><span class="co"># datetime &amp; hour 생성</span></span>
+<span id="cb16-157"><a href="#cb16-157" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'datetime'</span>] <span class="op">=</span> pd.to_datetime(train[<span class="st">'date'</span>] <span class="op">+</span> <span class="st">" "</span> <span class="op">+</span> train[<span class="st">'time'</span>])</span>
+<span id="cb16-158"><a href="#cb16-158" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'hour'</span>] <span class="op">=</span> train[<span class="st">'datetime'</span>].dt.hour</span>
+<span id="cb16-159"><a href="#cb16-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-160"><a href="#cb16-160" aria-hidden="true" tabindex="-1"></a><span class="co"># shift (Day/Night 교대조) 생성</span></span>
+<span id="cb16-161"><a href="#cb16-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-162"><a href="#cb16-162" aria-hidden="true" tabindex="-1"></a>first_hour <span class="op">=</span> train.loc[<span class="dv">0</span>, <span class="st">'hour'</span>]</span>
+<span id="cb16-163"><a href="#cb16-163" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="dv">8</span> <span class="op">&lt;=</span> first_hour <span class="op">&lt;=</span> <span class="dv">19</span>:   <span class="co"># 08:00 ~ 19:59 → Day</span></span>
+<span id="cb16-164"><a href="#cb16-164" aria-hidden="true" tabindex="-1"></a>    current_shift <span class="op">=</span> <span class="st">"Day"</span></span>
+<span id="cb16-165"><a href="#cb16-165" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:                       <span class="co"># 20:00 ~ 07:59 → Night</span></span>
+<span id="cb16-166"><a href="#cb16-166" aria-hidden="true" tabindex="-1"></a>    current_shift <span class="op">=</span> <span class="st">"Night"</span></span>
+<span id="cb16-167"><a href="#cb16-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-168"><a href="#cb16-168" aria-hidden="true" tabindex="-1"></a>shifts <span class="op">=</span> []</span>
+<span id="cb16-169"><a href="#cb16-169" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(train)):</span>
+<span id="cb16-170"><a href="#cb16-170" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb16-171"><a href="#cb16-171" aria-hidden="true" tabindex="-1"></a>        shifts.append(current_shift)</span>
+<span id="cb16-172"><a href="#cb16-172" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb16-173"><a href="#cb16-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-174"><a href="#cb16-174" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> train.loc[i, <span class="st">'count'</span>] <span class="op">&lt;</span> train.loc[i<span class="op">-</span><span class="dv">1</span>, <span class="st">'count'</span>]:  <span class="co"># count 감소 → 리셋</span></span>
+<span id="cb16-175"><a href="#cb16-175" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> train.loc[i, <span class="st">'hour'</span>]</span>
+<span id="cb16-176"><a href="#cb16-176" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="dv">8</span> <span class="op">&lt;=</span> h <span class="op">&lt;=</span> <span class="dv">19</span> <span class="kw">and</span> current_shift <span class="op">==</span> <span class="st">"Night"</span>) <span class="kw">or</span> (h <span class="op">&gt;=</span> <span class="dv">20</span> <span class="kw">or</span> h <span class="op">&lt;</span> <span class="dv">8</span> <span class="kw">and</span> current_shift <span class="op">==</span> <span class="st">"Day"</span>):</span>
+<span id="cb16-177"><a href="#cb16-177" aria-hidden="true" tabindex="-1"></a>            current_shift <span class="op">=</span> <span class="st">"Night"</span> <span class="cf">if</span> current_shift <span class="op">==</span> <span class="st">"Day"</span> <span class="cf">else</span> <span class="st">"Day"</span></span>
+<span id="cb16-178"><a href="#cb16-178" aria-hidden="true" tabindex="-1"></a>    shifts.append(current_shift)</span>
+<span id="cb16-179"><a href="#cb16-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-180"><a href="#cb16-180" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'shift'</span>] <span class="op">=</span> shifts</span>
+<span id="cb16-181"><a href="#cb16-181" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"shift 컬럼 생성 완료 (Day/Night)"</span>)</span>
+<span id="cb16-182"><a href="#cb16-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-183"><a href="#cb16-183" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> train.sort_values(by<span class="op">=</span><span class="st">"datetime"</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb16-184"><a href="#cb16-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-185"><a href="#cb16-185" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb16-186"><a href="#cb16-186" aria-hidden="true" tabindex="-1"></a><span class="co"># 1) 글로벌 누적 count (전체 기간)</span></span>
+<span id="cb16-187"><a href="#cb16-187" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb16-188"><a href="#cb16-188" aria-hidden="true" tabindex="-1"></a>global_counts <span class="op">=</span> []</span>
+<span id="cb16-189"><a href="#cb16-189" aria-hidden="true" tabindex="-1"></a>accum <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb16-190"><a href="#cb16-190" aria-hidden="true" tabindex="-1"></a>prev_count <span class="op">=</span> train.loc[<span class="dv">0</span>, <span class="st">'count'</span>]</span>
+<span id="cb16-191"><a href="#cb16-191" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-192"><a href="#cb16-192" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, row <span class="kw">in</span> train.iterrows():</span>
+<span id="cb16-193"><a href="#cb16-193" aria-hidden="true" tabindex="-1"></a>    current_count <span class="op">=</span> row[<span class="st">'count'</span>]</span>
+<span id="cb16-194"><a href="#cb16-194" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-195"><a href="#cb16-195" aria-hidden="true" tabindex="-1"></a>    <span class="co"># count가 리셋된 경우</span></span>
+<span id="cb16-196"><a href="#cb16-196" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> current_count <span class="op">&lt;</span> prev_count:</span>
+<span id="cb16-197"><a href="#cb16-197" aria-hidden="true" tabindex="-1"></a>        accum <span class="op">+=</span> prev_count  <span class="co"># 지금까지 생산량을 누적</span></span>
+<span id="cb16-198"><a href="#cb16-198" aria-hidden="true" tabindex="-1"></a>    global_counts.append(accum <span class="op">+</span> current_count)</span>
+<span id="cb16-199"><a href="#cb16-199" aria-hidden="true" tabindex="-1"></a>    prev_count <span class="op">=</span> current_count</span>
+<span id="cb16-200"><a href="#cb16-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-201"><a href="#cb16-201" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'global_count'</span>] <span class="op">=</span> global_counts</span>
+<span id="cb16-202"><a href="#cb16-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-203"><a href="#cb16-203" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb16-204"><a href="#cb16-204" aria-hidden="true" tabindex="-1"></a><span class="co"># 2) 월별 누적 count</span></span>
+<span id="cb16-205"><a href="#cb16-205" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------</span></span>
+<span id="cb16-206"><a href="#cb16-206" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'year_month'</span>] <span class="op">=</span> train[<span class="st">'datetime'</span>].dt.to_period(<span class="st">"M"</span>)  <span class="co"># 연-월 단위</span></span>
+<span id="cb16-207"><a href="#cb16-207" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'monthly_count'</span>] <span class="op">=</span> train.groupby(<span class="st">'year_month'</span>).cumcount() <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb16-208"><a href="#cb16-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-209"><a href="#cb16-209" aria-hidden="true" tabindex="-1"></a><span class="co"># 파생 변수 생성</span></span>
+<span id="cb16-210"><a href="#cb16-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-211"><a href="#cb16-211" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'real_time'</span>] <span class="op">=</span> train[<span class="st">'date'</span>] <span class="op">+</span> <span class="st">" "</span> <span class="op">+</span> train[<span class="st">'time'</span>]</span>
+<span id="cb16-212"><a href="#cb16-212" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'speed_ratio'</span>] <span class="op">=</span> train[<span class="st">'low_section_speed'</span>] <span class="op">/</span> train[<span class="st">'high_section_speed'</span>]</span>
+<span id="cb16-213"><a href="#cb16-213" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'pressure_speed_ratio'</span>] <span class="op">=</span> train[<span class="st">'cast_pressure'</span>] <span class="op">/</span> train[<span class="st">'high_section_speed'</span>]</span>
+<span id="cb16-214"><a href="#cb16-214" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-215"><a href="#cb16-215" aria-hidden="true" tabindex="-1"></a><span class="co"># 불필요한 컬럼 제거</span></span>
+<span id="cb16-216"><a href="#cb16-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-217"><a href="#cb16-217" aria-hidden="true" tabindex="-1"></a>drop_columns <span class="op">=</span> [ <span class="st">'id'</span>, <span class="st">'line'</span>, <span class="st">'name'</span>, <span class="st">'mold_name'</span>, <span class="st">'date'</span>, <span class="st">'time'</span>, <span class="st">'registration_time'</span>,<span class="st">'year_month'</span>,<span class="st">'hour'</span>]</span>
+<span id="cb16-218"><a href="#cb16-218" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> train.drop(columns<span class="op">=</span>drop_columns)</span>
+<span id="cb16-219"><a href="#cb16-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-220"><a href="#cb16-220" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"최종 데이터셋 컬럼 수:"</span>, <span class="bu">len</span>(train.columns))</span>
+<span id="cb16-221"><a href="#cb16-221" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"최종 데이터셋 예시:"</span>)</span>
+<span id="cb16-222"><a href="#cb16-222" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(train.head(<span class="dv">10</span>)[[<span class="st">'datetime'</span>,<span class="st">'count'</span>,<span class="st">'shift'</span>,<span class="st">'real_time'</span>,<span class="st">'speed_ratio'</span>,<span class="st">'pressure_speed_ratio'</span>]])</span>
+<span id="cb16-223"><a href="#cb16-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-224"><a href="#cb16-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-225"><a href="#cb16-225" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-226"><a href="#cb16-226" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-227"><a href="#cb16-227" aria-hidden="true" tabindex="-1"></a>train.loc<span class="co">[</span><span class="ot">:,['datetime', 'shift']</span><span class="co">]</span></span>
+<span id="cb16-228"><a href="#cb16-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-229"><a href="#cb16-229" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2.5 데이터 전처리</span></span>
+<span id="cb16-230"><a href="#cb16-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-231"><a href="#cb16-231" aria-hidden="true" tabindex="-1"></a><span class="fu">### molten_temp</span></span>
+<span id="cb16-232"><a href="#cb16-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-235"><a href="#cb16-235" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-236"><a href="#cb16-236" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb16-237"><a href="#cb16-237" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb16-238"><a href="#cb16-238" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb16-239"><a href="#cb16-239" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.patches <span class="im">as</span> patches</span>
+<span id="cb16-240"><a href="#cb16-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-241"><a href="#cb16-241" aria-hidden="true" tabindex="-1"></a><span class="co"># OS에 맞게 폰트 설정 (Windows 기준: Malgun Gothic)</span></span>
+<span id="cb16-242"><a href="#cb16-242" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'font.family'</span>] <span class="op">=</span> <span class="st">'Malgun Gothic'</span></span>
+<span id="cb16-243"><a href="#cb16-243" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'axes.unicode_minus'</span>] <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb16-244"><a href="#cb16-244" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-245"><a href="#cb16-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-246"><a href="#cb16-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-247"><a href="#cb16-247" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 로드</span></span>
+<span id="cb16-248"><a href="#cb16-248" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">'./data/train.csv'</span>)</span>
+<span id="cb16-249"><a href="#cb16-249" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> df.copy()</span>
+<span id="cb16-250"><a href="#cb16-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-251"><a href="#cb16-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-252"><a href="#cb16-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-253"><a href="#cb16-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-254"><a href="#cb16-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-255"><a href="#cb16-255" aria-hidden="true" tabindex="-1"></a><span class="co"># =======================</span></span>
+<span id="cb16-256"><a href="#cb16-256" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Molten Temperature</span></span>
+<span id="cb16-257"><a href="#cb16-257" aria-hidden="true" tabindex="-1"></a><span class="co"># =======================</span></span>
+<span id="cb16-258"><a href="#cb16-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-259"><a href="#cb16-259" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"[Molten Temperature - 용융 온도]"</span>)</span>
+<span id="cb16-260"><a href="#cb16-260" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""금속이 용융된 후 주입되는 시점의 센서 측정 온도를 나타냅니다."""</span>)</span>
+<span id="cb16-261"><a href="#cb16-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-262"><a href="#cb16-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-263"><a href="#cb16-263" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb16-264"><a href="#cb16-264" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. 시각화: 분포 확인 -&gt; Boxplot (불량/양품 비교)</span></span>
+<span id="cb16-265"><a href="#cb16-265" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb16-266"><a href="#cb16-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-267"><a href="#cb16-267" aria-hidden="true" tabindex="-1"></a><span class="co"># 600℃ 이상 데이터만 추출</span></span>
+<span id="cb16-268"><a href="#cb16-268" aria-hidden="true" tabindex="-1"></a>train_over600 <span class="op">=</span> train[train[<span class="st">'molten_temp'</span>] <span class="op">&gt;=</span> <span class="dv">600</span>]</span>
+<span id="cb16-269"><a href="#cb16-269" aria-hidden="true" tabindex="-1"></a><span class="co"># 양품(0)과 불량(1) 데이터 분리</span></span>
+<span id="cb16-270"><a href="#cb16-270" aria-hidden="true" tabindex="-1"></a>good <span class="op">=</span> train_over600[train_over600[<span class="st">'passorfail'</span>] <span class="op">==</span> <span class="dv">0</span>][<span class="st">'molten_temp'</span>]</span>
+<span id="cb16-271"><a href="#cb16-271" aria-hidden="true" tabindex="-1"></a>bad  <span class="op">=</span> train_over600[train_over600[<span class="st">'passorfail'</span>] <span class="op">==</span> <span class="dv">1</span>][<span class="st">'molten_temp'</span>]</span>
+<span id="cb16-272"><a href="#cb16-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-273"><a href="#cb16-273" aria-hidden="true" tabindex="-1"></a><span class="co"># 최소/최대 값 계산</span></span>
+<span id="cb16-274"><a href="#cb16-274" aria-hidden="true" tabindex="-1"></a>good_min, good_max <span class="op">=</span> good.<span class="bu">min</span>(), good.<span class="bu">max</span>()</span>
+<span id="cb16-275"><a href="#cb16-275" aria-hidden="true" tabindex="-1"></a>bad_min, bad_max <span class="op">=</span> bad.<span class="bu">min</span>(), bad.<span class="bu">max</span>()</span>
+<span id="cb16-276"><a href="#cb16-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-277"><a href="#cb16-277" aria-hidden="true" tabindex="-1"></a><span class="co"># 출력</span></span>
+<span id="cb16-278"><a href="#cb16-278" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"""양품(0)과 불량(1)의 분포 차이를 비교하여 온도 기준이 품질에 미치는 영향을 확인할 수 있습니다.</span></span>
+<span id="cb16-279"><a href="#cb16-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-280"><a href="#cb16-280" aria-hidden="true" tabindex="-1"></a><span class="ss">600℃ 이하에서는 공정 에러일 확률이 높아 알람 조건으로 활용할 수 있습니다.</span></span>
+<span id="cb16-281"><a href="#cb16-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-282"><a href="#cb16-282" aria-hidden="true" tabindex="-1"></a><span class="ss">600℃ 이상에서는 양품의 경우 최소 </span><span class="sc">{</span>good_min<span class="sc">:.1f}</span><span class="ss">℃, 최대 </span><span class="sc">{</span>good_max<span class="sc">:.1f}</span><span class="ss">℃의 범위 값을 가지고,</span></span>
+<span id="cb16-283"><a href="#cb16-283" aria-hidden="true" tabindex="-1"></a><span class="ss">불량의 경우 최소 </span><span class="sc">{</span>bad_min<span class="sc">:.1f}</span><span class="ss">℃, 최대 </span><span class="sc">{</span>bad_max<span class="sc">:.1f}</span><span class="ss">℃의 범위 값을 가지는 것을 확인하였습니다.</span></span>
+<span id="cb16-284"><a href="#cb16-284" aria-hidden="true" tabindex="-1"></a><span class="ss">"""</span>)</span>
+<span id="cb16-285"><a href="#cb16-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-286"><a href="#cb16-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-287"><a href="#cb16-287" aria-hidden="true" tabindex="-1"></a><span class="co"># Subplot 설정</span></span>
+<span id="cb16-288"><a href="#cb16-288" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>), sharey<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb16-289"><a href="#cb16-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-290"><a href="#cb16-290" aria-hidden="true" tabindex="-1"></a><span class="co"># (1.) 전체 데이터 박스플롯 (600℃ 이상 영역 강조)</span></span>
+<span id="cb16-291"><a href="#cb16-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-292"><a href="#cb16-292" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'passorfail'</span>, y<span class="op">=</span><span class="st">'molten_temp'</span>, data<span class="op">=</span>train, ax<span class="op">=</span>axes[<span class="dv">0</span>])</span>
+<span id="cb16-293"><a href="#cb16-293" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Molten Temperature (전체 데이터)"</span>)</span>
+<span id="cb16-294"><a href="#cb16-294" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"Pass/Fail"</span>)</span>
+<span id="cb16-295"><a href="#cb16-295" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">"Molten Temperature (℃)"</span>)</span>
+<span id="cb16-296"><a href="#cb16-296" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="op">-</span><span class="dv">5</span>, <span class="dv">750</span>)  <span class="co"># y축 600부터 시작</span></span>
+<span id="cb16-297"><a href="#cb16-297" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].grid(axis<span class="op">=</span><span class="st">'y'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb16-298"><a href="#cb16-298" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-299"><a href="#cb16-299" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-300"><a href="#cb16-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-301"><a href="#cb16-301" aria-hidden="true" tabindex="-1"></a><span class="co"># 600℃ 이하 영역 강조</span></span>
+<span id="cb16-302"><a href="#cb16-302" aria-hidden="true" tabindex="-1"></a>rect_error <span class="op">=</span> patches.Rectangle(</span>
+<span id="cb16-303"><a href="#cb16-303" aria-hidden="true" tabindex="-1"></a>    (<span class="op">-</span><span class="fl">0.5</span>, axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>]),  <span class="co"># x 시작, y축 최솟값</span></span>
+<span id="cb16-304"><a href="#cb16-304" aria-hidden="true" tabindex="-1"></a>    <span class="fl">2.0</span>,                            <span class="co"># 너비 (passorfail 0과 1 포함)</span></span>
+<span id="cb16-305"><a href="#cb16-305" aria-hidden="true" tabindex="-1"></a>    <span class="dv">600</span> <span class="op">-</span> axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>],    <span class="co"># 높이: y축 최솟값 ~ 600</span></span>
+<span id="cb16-306"><a href="#cb16-306" aria-hidden="true" tabindex="-1"></a>    linewidth<span class="op">=</span><span class="dv">1</span>, edgecolor<span class="op">=</span><span class="st">'red'</span>, facecolor<span class="op">=</span><span class="st">'red'</span>, alpha<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb16-307"><a href="#cb16-307" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'공정 에러 알람'</span></span>
+<span id="cb16-308"><a href="#cb16-308" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-309"><a href="#cb16-309" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].add_patch(rect_error)</span>
+<span id="cb16-310"><a href="#cb16-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-311"><a href="#cb16-311" aria-hidden="true" tabindex="-1"></a><span class="co"># 텍스트 추가</span></span>
+<span id="cb16-312"><a href="#cb16-312" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].text(</span>
+<span id="cb16-313"><a href="#cb16-313" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="fl">0.5</span>,                          <span class="co"># x 위치 (양품/불량 중앙)</span></span>
+<span id="cb16-314"><a href="#cb16-314" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>] <span class="op">+</span> (<span class="dv">600</span> <span class="op">-</span> axes[<span class="dv">0</span>].get_ylim()[<span class="dv">0</span>])<span class="op">/</span><span class="dv">2</span>,  <span class="co"># y 중앙</span></span>
+<span id="cb16-315"><a href="#cb16-315" aria-hidden="true" tabindex="-1"></a>    s<span class="op">=</span><span class="st">"공정 에러 알람"</span>,</span>
+<span id="cb16-316"><a href="#cb16-316" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">'red'</span>,</span>
+<span id="cb16-317"><a href="#cb16-317" aria-hidden="true" tabindex="-1"></a>    ha<span class="op">=</span><span class="st">'center'</span>,</span>
+<span id="cb16-318"><a href="#cb16-318" aria-hidden="true" tabindex="-1"></a>    va<span class="op">=</span><span class="st">'center'</span>,</span>
+<span id="cb16-319"><a href="#cb16-319" aria-hidden="true" tabindex="-1"></a>    fontsize<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb16-320"><a href="#cb16-320" aria-hidden="true" tabindex="-1"></a>    fontweight<span class="op">=</span><span class="st">'bold'</span></span>
+<span id="cb16-321"><a href="#cb16-321" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-322"><a href="#cb16-322" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-323"><a href="#cb16-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-324"><a href="#cb16-324" aria-hidden="true" tabindex="-1"></a><span class="co"># (2.) 600℃ 이상 데이터만 박스플롯 (Zoom-in)</span></span>
+<span id="cb16-325"><a href="#cb16-325" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'passorfail'</span>, y<span class="op">=</span><span class="st">'molten_temp'</span>, data<span class="op">=</span>train_over600, ax<span class="op">=</span>axes[<span class="dv">1</span>])</span>
+<span id="cb16-326"><a href="#cb16-326" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Molten Temperature (600℃ 이상 데이터)"</span>)</span>
+<span id="cb16-327"><a href="#cb16-327" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"Pass/Fail"</span>)</span>
+<span id="cb16-328"><a href="#cb16-328" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylabel(<span class="st">""</span>)</span>
+<span id="cb16-329"><a href="#cb16-329" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="dv">600</span>, <span class="dv">750</span>)  <span class="co"># y축 600부터 시작</span></span>
+<span id="cb16-330"><a href="#cb16-330" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].grid(axis<span class="op">=</span><span class="st">'y'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb16-331"><a href="#cb16-331" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-332"><a href="#cb16-332" aria-hidden="true" tabindex="-1"></a><span class="co"># 레이아웃 정리</span></span>
+<span id="cb16-333"><a href="#cb16-333" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb16-334"><a href="#cb16-334" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb16-335"><a href="#cb16-335" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-336"><a href="#cb16-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-337"><a href="#cb16-337" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-338"><a href="#cb16-338" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb16-339"><a href="#cb16-339" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. 결측치 처리 (최빈값으로 대체) + 라벨 생성 (600도 기준)</span></span>
+<span id="cb16-340"><a href="#cb16-340" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------</span></span>
+<span id="cb16-341"><a href="#cb16-341" aria-hidden="true" tabindex="-1"></a>mode_temp <span class="op">=</span> train[<span class="st">'molten_temp'</span>].mode()[<span class="dv">0</span>]</span>
+<span id="cb16-342"><a href="#cb16-342" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'molten_temp'</span>] <span class="op">=</span> train[<span class="st">'molten_temp'</span>].fillna(mode_temp)</span>
+<span id="cb16-343"><a href="#cb16-343" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"molten_temp 결측치 처리: 최빈값 </span><span class="sc">{</span>mode_temp<span class="sc">}</span><span class="ss">로 대체"</span>)</span>
+<span id="cb16-344"><a href="#cb16-344" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-345"><a href="#cb16-345" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-346"><a href="#cb16-346" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'molten_temp_label'</span>] <span class="op">=</span> (train[<span class="st">'molten_temp'</span>] <span class="op">&gt;=</span> <span class="dv">600</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb16-347"><a href="#cb16-347" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"라벨 생성: molten_temp &gt;= 600 → 1(양품), &lt; 600 → 0(불량)</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb16-348"><a href="#cb16-348" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-349"><a href="#cb16-349" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-350"><a href="#cb16-350" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-351"><a href="#cb16-351" aria-hidden="true" tabindex="-1"></a><span class="fu">### Mold Code</span></span>
+<span id="cb16-352"><a href="#cb16-352" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-355"><a href="#cb16-355" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-356"><a href="#cb16-356" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"[Mold Code - 금형 코드]"</span>)</span>
+<span id="cb16-357"><a href="#cb16-357" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"주조 시 사용된 금형을 나타내며, 금형별 특성 차이가 불량률에 영향을 줄 수 있습니다."</span>)</span>
+<span id="cb16-358"><a href="#cb16-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-359"><a href="#cb16-359" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-360"><a href="#cb16-360" aria-hidden="true" tabindex="-1"></a><span class="co"># 시각화</span></span>
+<span id="cb16-361"><a href="#cb16-361" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-362"><a href="#cb16-362" aria-hidden="true" tabindex="-1"></a><span class="co"># mold_code를 문자형으로 변환</span></span>
+<span id="cb16-363"><a href="#cb16-363" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'mold_code'</span>] <span class="op">=</span> train[<span class="st">'mold_code'</span>].astype(<span class="bu">str</span>)</span>
+<span id="cb16-364"><a href="#cb16-364" aria-hidden="true" tabindex="-1"></a><span class="co"># mold_code별 불량률(%) 계산</span></span>
+<span id="cb16-365"><a href="#cb16-365" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> (</span>
+<span id="cb16-366"><a href="#cb16-366" aria-hidden="true" tabindex="-1"></a>    train.groupby(<span class="st">"mold_code"</span>)[<span class="st">"passorfail"</span>]</span>
+<span id="cb16-367"><a href="#cb16-367" aria-hidden="true" tabindex="-1"></a>    .agg(<span class="kw">lambda</span> x: (x.<span class="bu">sum</span>() <span class="op">/</span> <span class="bu">len</span>(x)) <span class="op">*</span> <span class="dv">100</span>)  <span class="co"># 불량률 % 변환</span></span>
+<span id="cb16-368"><a href="#cb16-368" aria-hidden="true" tabindex="-1"></a>    .reset_index()</span>
+<span id="cb16-369"><a href="#cb16-369" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-370"><a href="#cb16-370" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> mold_fail_rate.rename(columns<span class="op">=</span>{<span class="st">'passorfail'</span>: <span class="st">'fail_rate'</span>}).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb16-371"><a href="#cb16-371" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-372"><a href="#cb16-372" aria-hidden="true" tabindex="-1"></a><span class="co"># 최대/최소 불량률 찾기</span></span>
+<span id="cb16-373"><a href="#cb16-373" aria-hidden="true" tabindex="-1"></a>max_row <span class="op">=</span> mold_fail_rate.loc[mold_fail_rate[<span class="st">'fail_rate'</span>].idxmax()]</span>
+<span id="cb16-374"><a href="#cb16-374" aria-hidden="true" tabindex="-1"></a>min_row <span class="op">=</span> mold_fail_rate.loc[mold_fail_rate[<span class="st">'fail_rate'</span>].idxmin()]</span>
+<span id="cb16-375"><a href="#cb16-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-376"><a href="#cb16-376" aria-hidden="true" tabindex="-1"></a><span class="co"># 평균 불량률 계산</span></span>
+<span id="cb16-377"><a href="#cb16-377" aria-hidden="true" tabindex="-1"></a>avg_rate <span class="op">=</span> mold_fail_rate[<span class="st">'fail_rate'</span>].mean().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb16-378"><a href="#cb16-378" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-379"><a href="#cb16-379" aria-hidden="true" tabindex="-1"></a><span class="co"># 설명 출력</span></span>
+<span id="cb16-380"><a href="#cb16-380" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(</span>
+<span id="cb16-381"><a href="#cb16-381" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span></span>
+<span id="cb16-382"><a href="#cb16-382" aria-hidden="true" tabindex="-1"></a><span class="st">금형 코드를 기준으로 각 금형을 사용하였을 때 불량률을 비교하였습니다.</span></span>
+<span id="cb16-383"><a href="#cb16-383" aria-hidden="true" tabindex="-1"></a><span class="st">불량률이 높을수록 해당 금형에서 발생하는 품질 문제가 많음을 의미합니다.</span></span>
+<span id="cb16-384"><a href="#cb16-384" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-385"><a href="#cb16-385" aria-hidden="true" tabindex="-1"></a><span class="st">전체 금형에서 평균 불량률은 </span><span class="sc">{avg_rate:.2f}</span><span class="st">%로 나타났으며,</span></span>
+<span id="cb16-386"><a href="#cb16-386" aria-hidden="true" tabindex="-1"></a><span class="st">그 중 '</span><span class="sc">{max_code}</span><span class="st">' 금형 사용 시 </span><span class="sc">{max_rate:.2f}</span><span class="st">%로 최대 불량률이 발생하고,</span></span>
+<span id="cb16-387"><a href="#cb16-387" aria-hidden="true" tabindex="-1"></a><span class="st">'</span><span class="sc">{min_code}</span><span class="st">' 금형 사용 시 </span><span class="sc">{min_rate:.2f}</span><span class="st">%로 최소 불량률이 발생하는 것으로 확인되었습니다.</span></span>
+<span id="cb16-388"><a href="#cb16-388" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>.<span class="bu">format</span>(</span>
+<span id="cb16-389"><a href="#cb16-389" aria-hidden="true" tabindex="-1"></a>        avg_rate<span class="op">=</span>avg_rate,</span>
+<span id="cb16-390"><a href="#cb16-390" aria-hidden="true" tabindex="-1"></a>        max_rate<span class="op">=</span>max_row[<span class="st">'fail_rate'</span>],</span>
+<span id="cb16-391"><a href="#cb16-391" aria-hidden="true" tabindex="-1"></a>        max_code<span class="op">=</span>max_row[<span class="st">'mold_code'</span>],</span>
+<span id="cb16-392"><a href="#cb16-392" aria-hidden="true" tabindex="-1"></a>        min_rate<span class="op">=</span>min_row[<span class="st">'fail_rate'</span>],</span>
+<span id="cb16-393"><a href="#cb16-393" aria-hidden="true" tabindex="-1"></a>        min_code<span class="op">=</span>min_row[<span class="st">'mold_code'</span>],</span>
+<span id="cb16-394"><a href="#cb16-394" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-395"><a href="#cb16-395" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-396"><a href="#cb16-396" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-397"><a href="#cb16-397" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-398"><a href="#cb16-398" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-399"><a href="#cb16-399" aria-hidden="true" tabindex="-1"></a><span class="co"># mold_code별 불량률(%) 계산</span></span>
+<span id="cb16-400"><a href="#cb16-400" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> (</span>
+<span id="cb16-401"><a href="#cb16-401" aria-hidden="true" tabindex="-1"></a>    train.groupby(<span class="st">"mold_code"</span>)[<span class="st">"passorfail"</span>]</span>
+<span id="cb16-402"><a href="#cb16-402" aria-hidden="true" tabindex="-1"></a>    .agg(<span class="kw">lambda</span> x: (x.<span class="bu">sum</span>() <span class="op">/</span> <span class="bu">len</span>(x)) <span class="op">*</span> <span class="dv">100</span>)  <span class="co"># 불량률 % 변환</span></span>
+<span id="cb16-403"><a href="#cb16-403" aria-hidden="true" tabindex="-1"></a>    .reset_index()</span>
+<span id="cb16-404"><a href="#cb16-404" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-405"><a href="#cb16-405" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> mold_fail_rate.rename(columns<span class="op">=</span>{<span class="st">'passorfail'</span>: <span class="st">'fail_rate'</span>}).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb16-406"><a href="#cb16-406" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-407"><a href="#cb16-407" aria-hidden="true" tabindex="-1"></a><span class="co"># 내림차순 정렬</span></span>
+<span id="cb16-408"><a href="#cb16-408" aria-hidden="true" tabindex="-1"></a>mold_fail_rate <span class="op">=</span> mold_fail_rate.sort_values(by<span class="op">=</span><span class="st">"fail_rate"</span>, ascending<span class="op">=</span><span class="va">False</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb16-409"><a href="#cb16-409" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-410"><a href="#cb16-410" aria-hidden="true" tabindex="-1"></a><span class="co"># 시각화</span></span>
+<span id="cb16-411"><a href="#cb16-411" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.barplot(</span>
+<span id="cb16-412"><a href="#cb16-412" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>mold_fail_rate,</span>
+<span id="cb16-413"><a href="#cb16-413" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">"mold_code"</span>,</span>
+<span id="cb16-414"><a href="#cb16-414" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">"fail_rate"</span>,</span>
+<span id="cb16-415"><a href="#cb16-415" aria-hidden="true" tabindex="-1"></a>    errorbar<span class="op">=</span><span class="va">None</span>,   <span class="co"># ✅ ci=None → errorbar=None 으로 수정</span></span>
+<span id="cb16-416"><a href="#cb16-416" aria-hidden="true" tabindex="-1"></a>    order<span class="op">=</span>mold_fail_rate[<span class="st">"mold_code"</span>],  <span class="co"># 정렬된 순서 반영</span></span>
+<span id="cb16-417"><a href="#cb16-417" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-418"><a href="#cb16-418" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-419"><a href="#cb16-419" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-420"><a href="#cb16-420" aria-hidden="true" tabindex="-1"></a><span class="co"># 타이틀 &amp; 라벨</span></span>
+<span id="cb16-421"><a href="#cb16-421" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Mold Code별 불량률 (%) - 내림차순"</span>)</span>
+<span id="cb16-422"><a href="#cb16-422" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Mold Code"</span>)</span>
+<span id="cb16-423"><a href="#cb16-423" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Fail Rate (%)"</span>)</span>
+<span id="cb16-424"><a href="#cb16-424" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-425"><a href="#cb16-425" aria-hidden="true" tabindex="-1"></a><span class="co"># 각 바 위에 값 표시 (소수 둘째자리, 굵은 글씨)</span></span>
+<span id="cb16-426"><a href="#cb16-426" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> ax.patches:</span>
+<span id="cb16-427"><a href="#cb16-427" aria-hidden="true" tabindex="-1"></a>    value <span class="op">=</span> <span class="bu">round</span>(p.get_height(), <span class="dv">2</span>)</span>
+<span id="cb16-428"><a href="#cb16-428" aria-hidden="true" tabindex="-1"></a>    ax.text(</span>
+<span id="cb16-429"><a href="#cb16-429" aria-hidden="true" tabindex="-1"></a>        p.get_x() <span class="op">+</span> p.get_width() <span class="op">/</span> <span class="dv">2</span>,  <span class="co"># x 위치 (바 가운데)</span></span>
+<span id="cb16-430"><a href="#cb16-430" aria-hidden="true" tabindex="-1"></a>        p.get_height() <span class="op">+</span> <span class="fl">0.2</span>,          <span class="co"># y 위치 (바 위쪽)</span></span>
+<span id="cb16-431"><a href="#cb16-431" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">%"</span>,                   <span class="co"># % 표시</span></span>
+<span id="cb16-432"><a href="#cb16-432" aria-hidden="true" tabindex="-1"></a>        ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"bottom"</span>, </span>
+<span id="cb16-433"><a href="#cb16-433" aria-hidden="true" tabindex="-1"></a>        <span class="co"># fontweight="bold"</span></span>
+<span id="cb16-434"><a href="#cb16-434" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-435"><a href="#cb16-435" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-436"><a href="#cb16-436" aria-hidden="true" tabindex="-1"></a><span class="co"># y축 범위 조정 (여유 공간 확보)</span></span>
+<span id="cb16-437"><a href="#cb16-437" aria-hidden="true" tabindex="-1"></a>plt.ylim(<span class="dv">0</span>, mold_fail_rate[<span class="st">"fail_rate"</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="dv">5</span>)</span>
+<span id="cb16-438"><a href="#cb16-438" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-439"><a href="#cb16-439" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb16-440"><a href="#cb16-440" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-441"><a href="#cb16-441" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-442"><a href="#cb16-442" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-443"><a href="#cb16-443" aria-hidden="true" tabindex="-1"></a><span class="co"># 데이터 처리</span></span>
+<span id="cb16-444"><a href="#cb16-444" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-445"><a href="#cb16-445" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-446"><a href="#cb16-446" aria-hidden="true" tabindex="-1"></a><span class="co"># 원-핫 인코딩 (One-Hot Encoding)</span></span>
+<span id="cb16-447"><a href="#cb16-447" aria-hidden="true" tabindex="-1"></a>mold_dummies <span class="op">=</span> pd.get_dummies(train[<span class="st">'mold_code'</span>], prefix<span class="op">=</span><span class="st">'mold'</span>)</span>
+<span id="cb16-448"><a href="#cb16-448" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> pd.concat([train, mold_dummies], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-449"><a href="#cb16-449" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-450"><a href="#cb16-450" aria-hidden="true" tabindex="-1"></a><span class="co"># 확인</span></span>
+<span id="cb16-451"><a href="#cb16-451" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Mold Code 데이터 처리: 원-핫 인코딩 진행, 결측치 없음"</span>)</span>
+<span id="cb16-452"><a href="#cb16-452" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-453"><a href="#cb16-453" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-454"><a href="#cb16-454" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-455"><a href="#cb16-455" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-456"><a href="#cb16-456" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-457"><a href="#cb16-457" aria-hidden="true" tabindex="-1"></a><span class="fu">### Heating Furnace</span></span>
+<span id="cb16-458"><a href="#cb16-458" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-459"><a href="#cb16-459" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-462"><a href="#cb16-462" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-463"><a href="#cb16-463" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""[Mold Code - 가열로]"""</span>)</span>
+<span id="cb16-464"><a href="#cb16-464" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"[Heating Furnace - 가열로]"</span>)</span>
+<span id="cb16-465"><a href="#cb16-465" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""금속을 용해 후 주입 전까지 일정 온도로 유지하는 가열로입니다.</span></span>
+<span id="cb16-466"><a href="#cb16-466" aria-hidden="true" tabindex="-1"></a><span class="st">A, B 두 종류가 존재하며, 측정되지 않은 데이터는 결측치로 존재할 수 있습니다.</span></span>
+<span id="cb16-467"><a href="#cb16-467" aria-hidden="true" tabindex="-1"></a><span class="st">이는 주조 품질에 영향을 미치는 주요 공정 요소 중 하나입니다."""</span>)</span>
+<span id="cb16-468"><a href="#cb16-468" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-469"><a href="#cb16-469" aria-hidden="true" tabindex="-1"></a><span class="co"># Heating Furnace별 불량률 계산 (백분율)</span></span>
+<span id="cb16-470"><a href="#cb16-470" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-471"><a href="#cb16-471" aria-hidden="true" tabindex="-1"></a><span class="co"># 결측치는 이후 None으로 처리</span></span>
+<span id="cb16-472"><a href="#cb16-472" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'heating_furnace'</span>] <span class="op">=</span> train[<span class="st">'heating_furnace'</span>].fillna(<span class="st">'None'</span>)</span>
+<span id="cb16-473"><a href="#cb16-473" aria-hidden="true" tabindex="-1"></a>furnace_fail_rate <span class="op">=</span> (</span>
+<span id="cb16-474"><a href="#cb16-474" aria-hidden="true" tabindex="-1"></a>    train.groupby(<span class="st">"heating_furnace"</span>)[<span class="st">"passorfail"</span>]</span>
+<span id="cb16-475"><a href="#cb16-475" aria-hidden="true" tabindex="-1"></a>    .agg(<span class="kw">lambda</span> x: (x.<span class="bu">sum</span>() <span class="op">/</span> <span class="bu">len</span>(x)) <span class="op">*</span> <span class="dv">100</span>)  <span class="co"># 불량률 % 계산</span></span>
+<span id="cb16-476"><a href="#cb16-476" aria-hidden="true" tabindex="-1"></a>    .reset_index()</span>
+<span id="cb16-477"><a href="#cb16-477" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-478"><a href="#cb16-478" aria-hidden="true" tabindex="-1"></a>furnace_fail_rate <span class="op">=</span> furnace_fail_rate.rename(columns<span class="op">=</span>{<span class="st">'passorfail'</span>: <span class="st">'fail_rate'</span>}).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb16-479"><a href="#cb16-479" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-480"><a href="#cb16-480" aria-hidden="true" tabindex="-1"></a><span class="co"># 내림차순 정렬</span></span>
+<span id="cb16-481"><a href="#cb16-481" aria-hidden="true" tabindex="-1"></a>furnace_fail_rate <span class="op">=</span> furnace_fail_rate.sort_values(by<span class="op">=</span><span class="st">"fail_rate"</span>, ascending<span class="op">=</span><span class="va">False</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb16-482"><a href="#cb16-482" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-483"><a href="#cb16-483" aria-hidden="true" tabindex="-1"></a><span class="co"># 최대/최소/평균 불량률 계산</span></span>
+<span id="cb16-484"><a href="#cb16-484" aria-hidden="true" tabindex="-1"></a>max_row <span class="op">=</span> furnace_fail_rate.loc[furnace_fail_rate[<span class="st">'fail_rate'</span>].idxmax()]</span>
+<span id="cb16-485"><a href="#cb16-485" aria-hidden="true" tabindex="-1"></a>min_row <span class="op">=</span> furnace_fail_rate.loc[furnace_fail_rate[<span class="st">'fail_rate'</span>].idxmin()]</span>
+<span id="cb16-486"><a href="#cb16-486" aria-hidden="true" tabindex="-1"></a>avg_rate <span class="op">=</span> furnace_fail_rate[<span class="st">'fail_rate'</span>].mean().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb16-487"><a href="#cb16-487" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-488"><a href="#cb16-488" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"""Heating Furnace별 불량률을 비교하였습니다.</span></span>
+<span id="cb16-489"><a href="#cb16-489" aria-hidden="true" tabindex="-1"></a><span class="ss">불량률이 높을수록 해당 가열로에서 발생하는 품질 문제가 많음을 의미합니다.</span></span>
+<span id="cb16-490"><a href="#cb16-490" aria-hidden="true" tabindex="-1"></a><span class="ss">전체 가열로에서 평균 불량률은 </span><span class="sc">{</span>avg_rate<span class="sc">:.2f}</span><span class="ss">%로 나타났으며,</span></span>
+<span id="cb16-491"><a href="#cb16-491" aria-hidden="true" tabindex="-1"></a><span class="ss">그 중 '</span><span class="sc">{</span>max_row[<span class="st">'heating_furnace'</span>]<span class="sc">}</span><span class="ss">' 가열로 사용 시 </span><span class="sc">{</span>max_row[<span class="st">'fail_rate'</span>]<span class="sc">:.2f}</span><span class="ss">%로 최대 불량률이 발생하고,</span></span>
+<span id="cb16-492"><a href="#cb16-492" aria-hidden="true" tabindex="-1"></a><span class="ss">'</span><span class="sc">{</span>min_row[<span class="st">'heating_furnace'</span>]<span class="sc">}</span><span class="ss">' 가열로 사용 시 </span><span class="sc">{</span>min_row[<span class="st">'fail_rate'</span>]<span class="sc">:.2f}</span><span class="ss">%로 최소 불량률이 발생하는 것으로 확인되었습니다."""</span></span>
+<span id="cb16-493"><a href="#cb16-493" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-494"><a href="#cb16-494" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-495"><a href="#cb16-495" aria-hidden="true" tabindex="-1"></a><span class="co"># Barplot 시각화</span></span>
+<span id="cb16-496"><a href="#cb16-496" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">6</span>,<span class="dv">4</span>))</span>
+<span id="cb16-497"><a href="#cb16-497" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.barplot(</span>
+<span id="cb16-498"><a href="#cb16-498" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>furnace_fail_rate,</span>
+<span id="cb16-499"><a href="#cb16-499" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">"heating_furnace"</span>,</span>
+<span id="cb16-500"><a href="#cb16-500" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">"fail_rate"</span>,</span>
+<span id="cb16-501"><a href="#cb16-501" aria-hidden="true" tabindex="-1"></a>    errorbar<span class="op">=</span><span class="va">None</span>,  <span class="co"># ci=None 대신 최신 버전 대응</span></span>
+<span id="cb16-502"><a href="#cb16-502" aria-hidden="true" tabindex="-1"></a>    order<span class="op">=</span>furnace_fail_rate[<span class="st">"heating_furnace"</span>]</span>
+<span id="cb16-503"><a href="#cb16-503" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-504"><a href="#cb16-504" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-505"><a href="#cb16-505" aria-hidden="true" tabindex="-1"></a><span class="co"># 타이틀 &amp; 라벨</span></span>
+<span id="cb16-506"><a href="#cb16-506" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Heating Furnace별 불량률 (%) - 내림차순"</span>)</span>
+<span id="cb16-507"><a href="#cb16-507" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Heating Furnace"</span>)</span>
+<span id="cb16-508"><a href="#cb16-508" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Fail Rate (%)"</span>)</span>
+<span id="cb16-509"><a href="#cb16-509" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-510"><a href="#cb16-510" aria-hidden="true" tabindex="-1"></a><span class="co"># 각 바 위에 값 표시 (소수 둘째자리, 굵은 글씨)</span></span>
+<span id="cb16-511"><a href="#cb16-511" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> ax.patches:</span>
+<span id="cb16-512"><a href="#cb16-512" aria-hidden="true" tabindex="-1"></a>    value <span class="op">=</span> <span class="bu">round</span>(p.get_height(), <span class="dv">2</span>)</span>
+<span id="cb16-513"><a href="#cb16-513" aria-hidden="true" tabindex="-1"></a>    ax.text(</span>
+<span id="cb16-514"><a href="#cb16-514" aria-hidden="true" tabindex="-1"></a>        p.get_x() <span class="op">+</span> p.get_width() <span class="op">/</span> <span class="dv">2</span>,</span>
+<span id="cb16-515"><a href="#cb16-515" aria-hidden="true" tabindex="-1"></a>        p.get_height() <span class="op">+</span> <span class="fl">0.5</span>,</span>
+<span id="cb16-516"><a href="#cb16-516" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">%"</span>,</span>
+<span id="cb16-517"><a href="#cb16-517" aria-hidden="true" tabindex="-1"></a>        ha<span class="op">=</span><span class="st">"center"</span>,</span>
+<span id="cb16-518"><a href="#cb16-518" aria-hidden="true" tabindex="-1"></a>        va<span class="op">=</span><span class="st">"bottom"</span>,</span>
+<span id="cb16-519"><a href="#cb16-519" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-520"><a href="#cb16-520" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-521"><a href="#cb16-521" aria-hidden="true" tabindex="-1"></a><span class="co"># y축 범위 설정 (여유 공간 확보)</span></span>
+<span id="cb16-522"><a href="#cb16-522" aria-hidden="true" tabindex="-1"></a>plt.ylim(<span class="dv">0</span>, furnace_fail_rate[<span class="st">"fail_rate"</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="dv">5</span>)</span>
+<span id="cb16-523"><a href="#cb16-523" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb16-524"><a href="#cb16-524" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-525"><a href="#cb16-525" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-526"><a href="#cb16-526" aria-hidden="true" tabindex="-1"></a><span class="co"># 결측치 처리</span></span>
+<span id="cb16-527"><a href="#cb16-527" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-528"><a href="#cb16-528" aria-hidden="true" tabindex="-1"></a><span class="co"># 결측치는 'None'으로 대체하고 원-핫 인코딩</span></span>
+<span id="cb16-529"><a href="#cb16-529" aria-hidden="true" tabindex="-1"></a>train[<span class="st">'heating_furnace'</span>] <span class="op">=</span> train[<span class="st">'heating_furnace'</span>].fillna(<span class="st">'None'</span>)</span>
+<span id="cb16-530"><a href="#cb16-530" aria-hidden="true" tabindex="-1"></a>furnace_dummies <span class="op">=</span> pd.get_dummies(train[<span class="st">'heating_furnace'</span>], prefix<span class="op">=</span><span class="st">'furnace'</span>)</span>
+<span id="cb16-531"><a href="#cb16-531" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> pd.concat([train, furnace_dummies], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-532"><a href="#cb16-532" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-533"><a href="#cb16-533" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"heating furnace 데이터 처리: 결측치는 'None'으로 처리 후 원-핫 인코딩 진행"</span>)</span>
+<span id="cb16-534"><a href="#cb16-534" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-535"><a href="#cb16-535" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-536"><a href="#cb16-536" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+</code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

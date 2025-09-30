@@ -438,12 +438,7 @@ app_ui = ui.page_fluid(
         #     # ui.card(ui.card_header("이상치 처리 결과"), ui.output_plot("outlier_plot"))
         # ),
 
-        # 4. 모델 학습
-        ui.nav_panel(
-            "모델 학습",
-            # ui.card(ui.card_header("변수 중요도"), ui.output_plot("feature_importance_plot")),
-            # ui.card(ui.card_header("모델 성능"), ui.output_plot("model_eval_plot"))
-        ),
+        
 
         # 5. 예측
         ui.nav_panel(
@@ -609,27 +604,36 @@ app_ui = ui.page_fluid(
 
                     ui.hr(),
 
-                    # 분석 시각화 카드
-                    ui.card(
-                        ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
-                        ui.card_body(
-                            ui.navset_tab(
-                                ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
-                                ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
-                                ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot"))
-                            )
-                        )
-                    )
+                 
                                         ),
                 ui.nav_panel("개선",
-                ),
+    ui.card(
+        ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
+        ui.card_body(
+            ui.navset_tab(
+                ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
+                ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
+                ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot")),
+                ui.nav_panel("불량 기여 요인",
+    ui.card(
+        ui.card_header("불량 기여 요인 Top 5"),
+        ui.output_plot("local_factor_plot"),
+        ui.hr(),
+        ui.output_ui("local_factor_desc")   # ← 설명 칸 추가
+    )
+)
+            )
+        )
+    )
+),
+
             )
         ),
         id="main_nav",   # ⭐ 탭 컨트롤을 위한 id
     )
 )
 
-
+        
 # ===== SERVER (변경 없음) =====
 def server(input, output, session):
     #====== 개요에서 카드 클릭 시 탭이동 =================================
@@ -697,7 +701,8 @@ def server(input, output, session):
 
     last_proba = reactive.value(None)
     loading = reactive.value(False)
-
+    local_factors = reactive.value(None)
+    
     def get_input_data():
         data = {}
         for col in cat_cols + num_cols:
@@ -743,12 +748,40 @@ def server(input, output, session):
         loading.set(True)
         try:
             X = get_input_data()
-            proba = model.predict_proba(X)[0,1]
+            proba = model.predict_proba(X)[0, 1]
             last_proba.set(proba)
+
+            # === 불량 기여 요인 계산 ===
+            # 1) 누적형 변수 제거
+            exclude_vars = ["count", "monthly_count", "global_count"]
+            use_num_cols = [c for c in num_cols if c not in exclude_vars]
+
+            baseline = df_predict[df_predict["passorfail"] == 0][use_num_cols].mean()
+            current = X[use_num_cols].iloc[0]
+
+            # 2) 표준화 거리 (표준편차로 나눔)
+            stds = df_predict[use_num_cols].std().replace(0, 1)  # 분모=0 방지
+            diffs = ((current - baseline) / stds) ** 2
+
+            # 3) 기여도 계산
+            if diffs.sum() > 0:
+               contrib = (diffs / diffs.sum()).sort_values(ascending=False)
+               local_factors.set(
+                   pd.DataFrame({
+                     "feature": [get_label(c) for c in contrib.index],
+                     "importance": contrib.values
+                 })
+              )
+            else:
+                 local_factors.set(
+        pd.DataFrame({"feature": [], "importance": []})
+    )
+
         except Exception as e:
             last_proba.set(f"error:{e}")
         finally:
             loading.set(False)
+
 
     @render.ui
     def prediction_result():
@@ -995,25 +1028,75 @@ def server(input, output, session):
 
         return dff
 
-
-    # --- 그래프 출력 ---
     @output
     @render.plot
-    def dist_plot():
-        dff = filtered_df()
-        var = input.var()
+    def local_factor_plot():
+     factors = local_factors()
+     if factors is None or factors.empty:
         fig, ax = plt.subplots()
-
-        if pd.api.types.is_numeric_dtype(dff[var]):
-            sns.histplot(dff[var].dropna(), kde=True, ax=ax)
-            ax.set_title(f"[{input.mold_code2()}] {label_map.get(var, var)}  분포 (히스토그램)")
-        else:
-            sns.countplot(x=dff[var], ax=ax, order=dff[var].value_counts().index)
-            ax.set_title(f"[{input.mold_code2()}] {label_map.get(var, var)}  분포 (막대그래프)")
-            ax.tick_params(axis="x", rotation=45)
-
+        ax.text(0.5, 0.5, "아직 예측 실행 안 됨", ha="center", va="center")
+        ax.axis("off")
         return fig
-    
+
+     top = factors.head(5).copy()
+     top["importance"] = top["importance"] * 100  # % 변환
+
+     fig, ax = plt.subplots(figsize=(8, 4))
+     bars = ax.barh(top["feature"], top["importance"], color="tomato")
+
+    # 각 막대 끝에 % 숫자 표시
+     for bar, val in zip(bars, top["importance"]):
+        ax.text(bar.get_width() + 0.5,
+                bar.get_y() + bar.get_height()/2,
+                f"{val:.1f}%",
+                va="center")
+
+        ax.invert_yaxis()
+        ax.set_xlabel("기여도 (%)")
+        ax.set_title("이번 케이스 불량 기여 요인 Top 5")
+        plt.tight_layout()
+     return fig
+
+    # === 여기에 local_factor_desc() 붙여넣기 ===
+    @output
+    @render.ui
+    def local_factor_desc():
+        factors = local_factors()
+        if factors is None or factors.empty:
+            return ui.markdown("아직 예측 실행 안 됨")
+
+        top = factors.head(5).copy()
+        top["importance"] = top["importance"] * 100
+
+        # baseline 평균과 비교해서 조절 방향 안내
+        exclude_vars = ["count", "monthly_count", "global_count"]
+        use_num_cols = [c for c in num_cols if c not in exclude_vars]
+        baseline = df_predict[df_predict["passorfail"] == 0][use_num_cols].mean()
+        current = get_input_data().iloc[0][use_num_cols]
+
+        desc_lines = []
+        for _, row in top.iterrows():
+            feat = row["feature"]
+            importance = row["importance"]
+            col = [k for k,v in label_map.items() if v == feat]
+            if not col: continue
+            col = col[0]
+
+            if col in current.index:
+                diff = current[col] - baseline[col]
+                if abs(diff) > 1e-6:
+                    direction = "낮추세요" if diff > 0 else "올리세요"
+                    adj_val = abs(diff) / 2
+                    advice = f" → {adj_val:.1f} 단위 {direction} (현재 {current[col]:.1f}, 기준 {baseline[col]:.1f})"
+                else:
+                    advice = ""
+            else:
+                advice = ""
+
+            desc_lines.append(f"- {feat}: {importance:.1f}% {advice}")
+
+        desc_text = "이번 예측에서 불량률은 아래 요인들의 영향을 많이 받습니다:\n" + "\n".join(desc_lines)
+        return ui.markdown(desc_text)
 
     @output
     @render.ui

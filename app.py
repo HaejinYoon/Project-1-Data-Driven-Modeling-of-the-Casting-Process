@@ -872,8 +872,29 @@ def server(input, output, session):
             dff,
             x="registration_time_str",
             y=var,
-            title=f"{var} 시계열 값",
-            labels={"registration_time_str": "등록 시간", var: var},
+            title=f"{label_map.get(var, var)} 시계열 값",
+            labels={
+                "registration_time_str": "등록 시간",
+                var: label_map.get(var, var)   # ← y축 라벨 한글 표시
+            },
+        )
+
+        # 배경 흰색 + 눈금선은 그대로 유지
+        fig.update_layout(
+            plot_bgcolor="white",   # 그래프 영역 배경
+            paper_bgcolor="white",  # 전체 영역 배경
+            xaxis=dict(
+                showline=True,       # x축 라인 보이기
+                linecolor="black",   # x축 라인 색
+                showgrid=True,       # x축 그리드 보이기
+                gridcolor="lightgray"
+            ),
+            yaxis=dict(
+                showline=True,       # y축 라인 보이기
+                linecolor="black",   # y축 라인 색
+                showgrid=True,       # y축 그리드 보이기
+                gridcolor="lightgray"
+            )
         )
 
         # x축을 datetime 형식으로 보기 좋게 표시

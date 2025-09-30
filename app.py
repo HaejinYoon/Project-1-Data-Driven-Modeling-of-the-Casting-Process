@@ -531,6 +531,8 @@ def server(input, output, session):
         # 범주형 변수: 첫 번째 값으로 초기화
         for col in cat_cols:
             first_val = str(sorted(df_predict[col].dropna().unique())[0])
+            if(col == "tryshot_signal"):
+                first_val = "없음"
             ui.update_select(col, selected=first_val)
 
         # 수치형 변수: 안전하게 숫자 변환 후 평균값으로 초기화

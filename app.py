@@ -238,6 +238,17 @@ app_ui = ui.page_fluid(
             rel="stylesheet",
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         ),
+         ui.tags.style("""
+            /* 날짜 범위 선택 입력창 가로 배치 */
+            .input-daterange {
+                display: flex !important;
+                align-items: center;
+                gap: 6px;
+            }
+            .input-daterange input {
+                width: 140px !important;   /* 각 칸 폭 */
+            }
+        """)
     ),
     ui.h2("주조 공정 불량 예측 대시보드", style="text-align:center;"),
 
@@ -1044,18 +1055,21 @@ def server(input, output, session):
         if times.empty:
             return ui.markdown("⚠️ 유효한 datetime 값 없음")
 
-        min_t, max_t = times.min(), times.max()
-        # init_end = min_t + pd.Timedelta(minutes=10)
-        # if init_end > max_t:
-        #     init_end = max_t
+        min_t, max_t = times.min().date(), times.max().date()
 
-        return ui.input_slider(
-            "ts_range",
-            "시간 범위 선택",
-            min=min_t, max=max_t,
-            value=[min_t, max_t],
-            step=600,
-            time_format="%Y-%m-%d %H:%M"
+        # 🔽 기존 input_date_range 대신 → input_date 두 개
+        return ui.div(
+            ui.input_date(
+                "ts_start", "from",
+                value=min_t, min=min_t, max=max_t,
+                width="200px"
+            ),
+            ui.input_date(
+                "ts_end", "to",
+                value=max_t, min=min_t, max=max_t,
+                width="200px"
+            ),
+            style="display:flex; flex-direction:column; gap:8px;"  # 두 줄 배치
         )
 
     @output
@@ -1065,16 +1079,15 @@ def server(input, output, session):
             return px.scatter(title="⚠️ registration_time 없음")
 
         var = input.ts_var()
-        rng = input.ts_range()
+        rng_start = pd.to_datetime(input.ts_start())
+        rng_end   = pd.to_datetime(input.ts_end())
 
         dff = df_raw.copy()
         dff["registration_time"] = pd.to_datetime(dff["registration_time"], errors="coerce")
         dff = dff.dropna(subset=["registration_time", var, "passorfail"])
         dff["registration_time_str"] = dff["registration_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
-        if rng is not None:
-            start, end = pd.to_datetime(rng[0]), pd.to_datetime(rng[1])
-            dff = dff[(dff["registration_time"] >= start) & (dff["registration_time"] <= end)]
+        dff = dff[(dff["registration_time"] >= rng_start) & (dff["registration_time"] <= rng_end)]
 
         if dff.empty:
             return px.scatter(title="⚠️ 선택한 구간에 데이터 없음")

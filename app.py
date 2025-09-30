@@ -81,7 +81,8 @@ df_predict = df_predict[
 
 # 탐색 탭용 (필터링/EDA)
 drop_cols_explore = ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]
-df_explore = df_raw.drop(columns=drop_cols_explore)
+df_explore = df_raw.drop(columns=drop_cols_explore, errors="ignore")  # ← 안전하게
+# mold_code는 남김
 
 # 예측에서 제외할 컬럼
 drop_cols = [
@@ -1326,6 +1327,35 @@ def server(input, output, session):
         )
 
     @output
+    @render.plot
+    def dist_plot():
+        try:
+            var = input.var()
+            mold = input.mold_code2()
+            dff = df_explore[df_explore["mold_code"].astype(str) == mold]
+
+            if var not in dff.columns:
+                fig, ax = plt.subplots()
+                ax.text(0.5,0.5,"선택한 변수가 데이터에 없음",ha="center",va="center")
+                ax.axis("off")
+                return fig
+
+            fig, ax = plt.subplots(figsize=(6,4))
+            if pd.api.types.is_numeric_dtype(dff[var]):
+                sns.histplot(dff[var], bins=30, kde=True, ax=ax)
+            else:
+                dff[var].value_counts().plot(kind="bar", ax=ax)
+
+            ax.set_title(f"{get_label(var)} 분포 (Mold {mold})")
+            return fig
+
+        except Exception as e:
+            fig, ax = plt.subplots()
+            ax.text(0.5,0.5,f"에러: {e}",ha="center",va="center")
+            ax.axis("off")
+            return fig
+
+    @output
     @render_plotly
     def timeseries_plot():
         if "registration_time" not in df_raw.columns:
@@ -1338,60 +1368,66 @@ def server(input, output, session):
         dff = df_raw.copy()
         dff["registration_time"] = pd.to_datetime(dff["registration_time"], errors="coerce")
         dff = dff.dropna(subset=["registration_time", var, "passorfail"])
-        dff["registration_time_str"] = dff["registration_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
-
         dff = dff[(dff["registration_time"] >= rng_start) & (dff["registration_time"] <= rng_end)]
 
         if dff.empty:
             return px.scatter(title="⚠️ 선택한 구간에 데이터 없음")
 
-        # pass/fail을 범주형으로 변환 → 색상 강제
+        # Pass/Fail → 색상
         dff["불량여부"] = dff["passorfail"].map({0: "Pass", 1: "Fail"})
+        dff = dff.sort_values("registration_time")
+        dff["registration_time_str"] = dff["registration_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
+        # === 원본 점 그래프 ===
         fig = px.scatter(
             dff,
             x="registration_time_str",
             y=var,
             color="불량여부",
             color_discrete_map={"Pass": "green", "Fail": "red"},
-            title=f"{label_map.get(var, var)} 시계열 값",
+            title=f"{label_map.get(var, var)} 시계열 (원본{' + 스무딩' if pd.api.types.is_numeric_dtype(dff[var]) else ''})",
             labels={
                 "registration_time_str": "등록 시간",
-                var: label_map.get(var, var)   # ← y축 라벨 한글 표시
+                var: label_map.get(var, var)
             },
         )
 
-        # 배경 흰색 + 눈금선은 그대로 유지
-        fig.update_layout(
-            plot_bgcolor="white",   # 그래프 영역 배경
-            paper_bgcolor="white",  # 전체 영역 배경
-            xaxis=dict(
-                showline=True,       # x축 라인 보이기
-                linecolor="black",   # x축 라인 색
-                showgrid=True,       # x축 그리드 보이기
-                gridcolor="lightgray"
-            ),
-            yaxis=dict(
-                showline=True,       # y축 라인 보이기
-                linecolor="black",   # y축 라인 색
-                showgrid=True,       # y축 그리드 보이기
-                gridcolor="lightgray"
-            )
-        )
+        # === 수치형일 때만 스무딩 추가 ===
+        if pd.api.types.is_numeric_dtype(dff[var]):
+            def smooth_series(series, window=20):
+                return series.rolling(window=window, center=True, min_periods=1).mean()
 
-        # 배경 흰색, 보조선 점선
+            dff["smoothed"] = smooth_series(dff[var], window=20)
+
+            fig.add_scatter(
+                x=dff["registration_time_str"],
+                y=dff["smoothed"],
+                mode="lines",
+                name=f"{label_map.get(var, var)} (Smoothed)",
+                line=dict(color="blue", width=2)
+            )
+
+        # 공통 레이아웃
         fig.update_layout(
+            title=dict(
+                text=f"{label_map.get(var, var)} 시계열 (원본{' + 스무딩' if pd.api.types.is_numeric_dtype(dff[var]) else ''})",
+                x=0.5,
+                xanchor="center",
+                y=0.98,         # 🔹 제목 더 위로
+                yanchor="top",
+                font=dict(size=18)
+            ),
             plot_bgcolor="white",
-            xaxis=dict(showgrid=True, gridcolor="lightgray", griddash="dot"),
-            yaxis=dict(showgrid=True, gridcolor="lightgray", griddash="dot"),
+            paper_bgcolor="white",
             hovermode="x unified",
-            margin=dict(l=40, r=20, t=40, b=40),
-            legend_title_text=""  # ← 범례 제목 제거
+            margin=dict(l=40, r=20, t=80, b=40),  # 🔹 위쪽 여백 확보
+            legend_title_text="",
+            xaxis=dict(showgrid=True, gridcolor="lightgray", griddash="dot"),
+            yaxis=dict(showgrid=True, gridcolor="lightgray", griddash="dot")
         )
 
         fig.update_traces(marker=dict(size=5, opacity=0.5))
-        
-        # ==== 슬라이더/버튼 추가 ====
+
         fig.update_xaxes(
             rangeslider=dict(visible=True),
             rangeselector=dict(

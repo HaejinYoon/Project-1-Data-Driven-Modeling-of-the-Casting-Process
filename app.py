@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
 from shiny import App, ui, render, reactive
-from shiny.ui import update_slider, update_numeric, update_select
+from shiny.ui import update_slider, update_numeric, update_select, update_navs
 import seaborn as sns
 import pathlib
 import plotly.express as px
@@ -172,6 +172,40 @@ svg_code = f"""
 </svg>
 """
 
+# ===== CSS (카드 전체 클릭영역) =====
+card_click_css = """
+<style>
+/* 개요 전용 카드만 hover 효과 */
+.overview-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    position: relative;
+}
+
+.overview-card:hover {
+    background-color: #f8f9fa !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+/* 카드 전체를 클릭 가능하게 하는 투명 버튼 */
+.card-link {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    cursor: pointer;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+.card-link:hover,
+.card-link:focus,
+.card-link:active {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+</style>
+"""
+
 # ===== UI =====
 app_ui = ui.page_fluid(
     ui.head_content(
@@ -190,25 +224,54 @@ app_ui = ui.page_fluid(
 
     ui.navset_tab(
         # 1. Overview
-        ui.nav_panel(
-    "개요",
-    # -------------------- 상단 SVG + 버튼 --------------------
-    ui.div(
-        {"style": "position: relative; display:flex; justify-content:center;"},
-        ui.HTML(svg_code),
-        *[
-            ui.input_action_button(
-                f"btn_{lbl['id']}", "",
-                style=f"""
-                    position:absolute;
-                    top:{lbl['y']}px; left:calc(50% - 500px + {lbl['x']}px);
-                    width:{lbl['w']}px; height:{lbl['h']}px;
-                    opacity:0; cursor:pointer;
-                """
+        # ===== 네비게이션 탭 =====
+        ui.nav_panel("개요",
+            ui.HTML(card_click_css),
+            ui.layout_columns(
+                ui.card(
+                    {"class": "overview-card"},
+                    ui.card_header("데이터 탐색"),
+                    "📊 데이터 확인",
+                    ui.input_action_button("go_explore", "", class_="card-link")
+                ),
+                ui.card(
+                    {"class": "overview-card"},
+                    ui.card_header("예측"),
+                    "🤖 모델 예측",
+                    ui.input_action_button("go_predict", "", class_="card-link")
+                ),
+                ui.card(
+                    {"class": "overview-card"},
+                    ui.card_header("모델링"),
+                    "⚙️ 모델 학습",
+                    ui.input_action_button("go_model", "", class_="card-link")
+                ),
             )
-            for lbl in labels
-        ]
-    ),
+        ),
+
+        # 2. 데이터 탐색 (EDA)
+        ui.nav_panel(
+            "데이터 탐색",
+            ui.navset_tab(
+                ui.nav_panel(
+                    "개요",
+                        # -------------------- 상단 SVG + 버튼 --------------------
+                        ui.div(
+                            {"style": "position: relative; display:flex; justify-content:center;"},
+                            ui.HTML(svg_code),
+                            *[
+                                ui.input_action_button(
+                                    f"btn_{lbl['id']}", "",
+                                    style=f"""
+                                        position:absolute;
+                                        top:{lbl['y']}px; left:calc(50% - 500px + {lbl['x']}px);
+                                        width:{lbl['w']}px; height:{lbl['h']}px;
+                                        opacity:0; cursor:pointer;
+                                    """
+                                )
+                                for lbl in labels
+                            ]
+                        ),
 
     # -------------------- JS 코드 삽입 --------------------
     ui.tags.script("""
@@ -558,12 +621,30 @@ app_ui = ui.page_fluid(
                 )
             )
         ),
+        id="main_nav",   # ⭐ 탭 컨트롤을 위한 id
     )
 )
 
 
 # ===== SERVER (변경 없음) =====
 def server(input, output, session):
+    #====== 개요에서 카드 클릭 시 탭이동 =================================
+    @reactive.Effect
+    @reactive.event(input.go_explore)
+    def _():
+        update_navs("main_nav", selected="데이터 탐색")
+
+    @reactive.Effect
+    @reactive.event(input.go_predict)
+    def _():
+        update_navs("main_nav", selected="예측")
+
+    @reactive.Effect
+    @reactive.event(input.go_model)
+    def _():
+        update_navs("main_nav", selected="모델 학습")
+    #=================================================================
+
     # 서버 함수 안에
     @reactive.effect
     @reactive.event(input.goto_explore)

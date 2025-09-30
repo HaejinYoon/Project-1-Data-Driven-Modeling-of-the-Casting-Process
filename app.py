@@ -18,6 +18,38 @@ app_dir = pathlib.Path(__file__).parent
 plt.rcParams["font.family"] = "Malgun Gothic"   # 윈도우: 맑은 고딕
 plt.rcParams["axes.unicode_minus"] = False      # 마이너스 기호 깨짐 방지
 
+
+
+import os
+from matplotlib import font_manager
+import matplotlib.pyplot as plt
+import plotly.io as pio
+
+# 폰트 파일 경로
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+font_path = os.path.join(APP_DIR, "www", "fonts", "NanumGothic-Regular.ttf")
+
+# 폰트 적용
+if os.path.exists(font_path):
+    font_manager.fontManager.addfont(font_path)
+    plt.rcParams["font.family"] = "NanumGothic"  # Matplotlib
+    print(f"✅ 한글 폰트 적용됨: {font_path}")
+else:
+    plt.rcParams["font.family"] = "sans-serif"
+    print(f"⚠️ 한글 폰트 파일 없음 → {font_path}")
+
+# 마이너스 부호 깨짐 방지
+plt.rcParams["axes.unicode_minus"] = False
+
+# Plotly 기본 폰트 설정
+pio.templates["nanum"] = pio.templates["plotly_white"].update(
+    layout_font=dict(family="NanumGothic")
+)
+pio.templates.default = "nanum"
+
+
+
+
 # ===== 모델 불러오기 =====
 MODEL_PATH = "./models/model_2.pkl"
 model = joblib.load(MODEL_PATH)
@@ -51,34 +83,55 @@ num_cols = [c for c in used_columns if c not in cat_cols]
 
 # ===== 라벨 맵 =====
 label_map = {
-    "count": "일조 생산 수",
-    "monthly_count": "월 생산 수",
-    "global_count": "총 누적 생산 수",
-    "working": "작동 여부",
-    "emergency_stop": "비상 정지",
-    "molten_temp": "용탕 온도",
-    "facility_operation_cycleTime": "설비 작동 사이클타임",
-    "production_cycletime": "생산 사이클타임",
+    # 기본 정보 관련
+    "id": "고유 번호",
+    "line": "생산 라인 이름",
+    "name": "장비 이름",
+    "mold_name": "금형 이름",
+    "time": "측정 날짜",
+    "date": "측정 시간",
+
+    # 공정 상태 관련
+    "count": "누적 제품 개수",
+    "working": "장비 가동 여부 (가동 / 멈춤 등)",
+    "emergency_stop": "비상 정지 여부 (ON / OFF)",
+    "registration_time": "데이터 등록 시간",
+    "tryshot_signal": "측정 딜레이 여부",
+
+    # 용융 단계
+    "molten_temp": "용융 온도",
+    "heating_furnace": "용해로 정보",
+
+    # 충진 단계
+    "sleeve_temperature": "주입 관 온도",
+    "EMS_operation_time": "전자 교반(EMS) 가동 시간",
     "low_section_speed": "하위 구간 주입 속도",
     "high_section_speed": "상위 구간 주입 속도",
+    "mold_code": "금형 코드",
     "molten_volume": "주입한 금속 양",
     "cast_pressure": "주입 압력",
-    "biscuit_thickness": "비스킷 두께",
-    "upper_mold_temp1": "상부금형1 온도",
-    "upper_mold_temp2": "상부금형2 온도",
-    "upper_mold_temp3": "상부금형3 온도",
-    "lower_mold_temp1": "하부금형1 온도",
-    "lower_mold_temp2": "하부금형2 온도",
-    "lower_mold_temp3": "하부금형3 온도",
-    "sleeve_temperature": "주입 관 온도",
-    "physical_strength": "물리적 강도",
+
+    # 냉각 단계
+    "upper_mold_temp1": "상부1 금형 온도",
+    "upper_mold_temp2": "상부2 금형 온도",
+    "upper_mold_temp3": "상부3 금형 온도",
+    "lower_mold_temp1": "하부1 금형 온도",
+    "lower_mold_temp2": "하부2 금형 온도",
+    "lower_mold_temp3": "하부3 금형 온도",
     "Coolant_temperature": "냉각수 온도",
-    "EMS_operation_time": "EMS 작동 시간",
-    "mold_code": "금형 코드",
-    "heating_furnace": "가열로",
-    "shift": "주, 야간 조",
-    "tryshot_signal": "시험 가동 여부"
+
+    # 공정 속도 관련
+    "facility_operation_cycleTime": "장비 전체 사이클 시간",
+    "production_cycletime": "실제 생산 사이클 시간",
+
+    # 품질 및 성능
+    "biscuit_thickness": "주조물 두께",
+    "physical_strength": "제품 강도",
+
+    # 평가
+    "passorfail": "합격/불합격"
 }
+
 
 # ===== 라벨 정의 (표시 텍스트 = 한글, 실제 var = 변수명) =====
 labels = [
@@ -220,34 +273,164 @@ app_ui = ui.page_fluid(
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         ),
     ),
-    ui.h2("주조 공정 불량 예측 대시보드", style="text-align:center;"),
+
+
+    # ui.h2("주조 공정 불량 예측 대시보드", style="text-align:center;"),
+
+
+    ui.HTML("""
+        <h1 style="
+            text-align: center; 
+            font-size: 2rem; 
+            font-weight: bold; 
+            margin-top: 1cm;
+            margin-bottom: 1rem;
+        ">
+            주조 공정 불량 예측
+        </h1>
+    """),
 
     ui.navset_tab(
-        # 1. Overview
-        # ===== 네비게이션 탭 =====
-        ui.nav_panel("개요",
-            ui.HTML(card_click_css),
-            ui.layout_columns(
-                ui.card(
-                    {"class": "overview-card"},
-                    ui.card_header("데이터 탐색"),
-                    "📊 데이터 확인",
-                    ui.input_action_button("go_explore", "", class_="card-link")
+        # # 1. Overview
+        # # ===== 네비게이션 탭 =====
+
+    # 1. Overview
+    # ===== 네비게이션 탭 =====
+    ui.nav_panel("개요",
+        ui.HTML("""
+        <style>
+            /* 카드 hover 효과 */
+            .overview-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                cursor: pointer;
+                margin-top: 20px; /* 카드 살짝 아래로 이동 */
+                position: relative;
+            }
+            .overview-card:hover {
+                transform: scale(1.03);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            }
+            /* 카드 하단 [바로가기] 텍스트 */
+            .card-link-text {
+                display: block;
+                text-align: center;
+                font-weight: bold;
+                font-size: 16px;
+                color: black; /* 기본 글자색 */
+                margin-top: 10px;
+                transition: color 0.3s ease;
+            }
+            .overview-card:hover .card-link-text {
+                color: white; /* hover 시 흰색 */
+            }
+        </style>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const cards = document.querySelectorAll(".overview-card");
+                const actions = ["go_explore", "go_predict", "go_model"];
+
+                cards.forEach(function(card, index) {
+                    card.addEventListener("click", function() {
+                        Shiny.setInputValue(actions[index], Math.random(), {priority: "event"});
+                    });
+                });
+            });
+        </script>
+        """),
+        ui.layout_columns(
+
+            # 1️⃣ 데이터 탐색 (파스텔 노랑)
+            ui.card(
+                {"class": "overview-card", "style": "border: 2px solid #FFE082; color: #F9A825;"},
+                ui.card_header(
+                    "데이터 탐색",
+                    style=(
+                        "background-color: #FFE082; color: #333; "
+                        "font-weight:bold; font-size:20px; text-align:center; "
+                        "padding-top:15px; padding-bottom:15px;"
+                    )
                 ),
-                ui.card(
-                    {"class": "overview-card"},
-                    ui.card_header("예측"),
-                    "🤖 모델 예측",
-                    ui.input_action_button("go_predict", "", class_="card-link")
+                ui.tags.img(
+                    src="1.png",
+                    style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
                 ),
-                ui.card(
-                    {"class": "overview-card"},
-                    ui.card_header("모델링"),
-                    "⚙️ 모델 학습",
-                    ui.input_action_button("go_model", "", class_="card-link")
+                ui.HTML(
+                    """
+                    <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
+                        주조 공정에 대한 이해를 돕고<br>
+                        사용 데이터에 대한 탐색 기능을 제공합니다.
+                    </p>
+                    """
                 ),
-            )
-        ),
+                ui.tags.p("[바로가기]", class_="card-link-text")
+            ),
+
+
+
+
+            # 2️⃣ 예측 (파스텔 연두)
+            ui.card(
+                {"class": "overview-card", "style": "border: 2px solid #C8E6C9; color: #388E3C;"},
+                ui.card_header(
+                    "예측",
+                    style=(
+                        "background-color: #C8E6C9; color: #333; "
+                        "font-weight:bold; font-size:20px; text-align:center; "
+                        "padding-top:15px; padding-bottom:15px;"
+                    )
+                ),
+                ui.tags.img(
+                    src="3.png",
+                    style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
+                ),
+                ui.HTML(
+                    """
+                    <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
+                        모델 예측 기능을 통해 입력된 공정 조건을 바탕으로<br>
+                        생산품의 품질 결과 예측을 제공합니다.
+                    </p>
+                    """
+                ),
+                ui.tags.p("[바로가기]", class_="card-link-text")
+            ),
+
+            # 3️⃣ 모델링 (파스텔 하늘색)
+            ui.card(
+                {"class": "overview-card", "style": "border: 2px solid #B3E5FC; color: #0277BD;"},
+                ui.card_header(
+                    "모델링",
+                    style=(
+                        "background-color: #B3E5FC; color: #333; "
+                        "font-weight:bold; font-size:20px; text-align:center; "
+                        "padding-top:15px; padding-bottom:15px;"
+                    )
+                ),
+                ui.tags.img(
+                    src="2.png",
+                    style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
+                ),
+                ui.HTML(
+                    """
+                    <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
+                        개발 시도한 모델 정보와<br>
+                        최종 선정한 모델에 대한 설명과 근거를 제공합니다.                        
+                    </p>
+                    """
+                ),
+                ui.tags.p("[바로가기]", class_="card-link-text")
+            ),
+        )
+    ),
+
+
+
+
+
+
+
+
+
 
         # 2. 데이터 탐색 (EDA)
         ui.nav_panel(

@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
 from shiny import App, ui, render, reactive
-from shiny.ui import update_slider, update_numeric, update_select
+from shiny.ui import update_slider, update_numeric, update_select, update_navs
 import seaborn as sns
 import pathlib
 import plotly.express as px
@@ -172,6 +172,40 @@ svg_code = f"""
 </svg>
 """
 
+# ===== CSS (카드 전체 클릭영역) =====
+card_click_css = """
+<style>
+/* 개요 전용 카드만 hover 효과 */
+.overview-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    position: relative;
+}
+
+.overview-card:hover {
+    background-color: #f8f9fa !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+/* 카드 전체를 클릭 가능하게 하는 투명 버튼 */
+.card-link {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    cursor: pointer;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+.card-link:hover,
+.card-link:focus,
+.card-link:active {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+</style>
+"""
+
 # ===== UI =====
 app_ui = ui.page_fluid(
     ui.head_content(
@@ -190,184 +224,211 @@ app_ui = ui.page_fluid(
 
     ui.navset_tab(
         # 1. Overview
-        ui.nav_panel(
-    "개요",
-    # -------------------- 상단 SVG + 버튼 --------------------
-    ui.div(
-        {"style": "position: relative; display:flex; justify-content:center;"},
-        ui.HTML(svg_code),
-        *[
-            ui.input_action_button(
-                f"btn_{lbl['id']}", "",
-                style=f"""
-                    position:absolute;
-                    top:{lbl['y']}px; left:calc(50% - 500px + {lbl['x']}px);
-                    width:{lbl['w']}px; height:{lbl['h']}px;
-                    opacity:0; cursor:pointer;
-                """
+        # ===== 네비게이션 탭 =====
+        ui.nav_panel("개요",
+            ui.HTML(card_click_css),
+            ui.layout_columns(
+                ui.card(
+                    {"class": "overview-card"},
+                    ui.card_header("데이터 탐색"),
+                    "📊 데이터 확인",
+                    ui.input_action_button("go_explore", "", class_="card-link")
+                ),
+                ui.card(
+                    {"class": "overview-card"},
+                    ui.card_header("예측"),
+                    "🤖 모델 예측",
+                    ui.input_action_button("go_predict", "", class_="card-link")
+                ),
+                ui.card(
+                    {"class": "overview-card"},
+                    ui.card_header("모델링"),
+                    "⚙️ 모델 학습",
+                    ui.input_action_button("go_model", "", class_="card-link")
+                ),
             )
-            for lbl in labels
-        ]
-    ),
-
-    # -------------------- JS 코드 삽입 --------------------
-    ui.tags.script("""
-        Shiny.addCustomMessageHandler("switch_tab_with_label", function(msg) {
-            let tabs = document.querySelectorAll('.nav-link');
-            tabs.forEach(function(tab) {
-                if (tab.textContent.trim() === msg.tab) {
-                    tab.click();
-                }
-            });
-        });
-    """),
-
-    # -------------------- 설명 영역 --------------------
-    ui.div(
-        {
-            "style": """
-                margin-top:30px; 
-                padding:20px; 
-                border:1px solid #ddd; 
-                border-radius:10px; 
-                background:#fafafa;
-            """
-        },
-        ui.markdown("""
-
-### [주조 공정]
-
-주조(Casting)는 금속을 녹여 원하는 형상을 만드는 제조 공정입니다.
-고체 상태의 금속을 고온에서 녹여 액체 상태로 만든 뒤, 미리 준비된 금형에 부어 응고시키면 제품 형태가 완성됩니다.
-
-주조 공정은 복잡한 형상, 대량 생산, 재료 절감이 가능하여 자동차, 기계 부품 등 다양한 산업 분야에서 널리 활용됩니다.
-
-
-주요 목적:
-- 금속을 원하는 형상과 치수로 성형
-- 기계적 강도와 품질 확보
-- 공정 효율 및 생산성 향상
-
----
-
-### [다이캐스팅 공정]
-
-다이캐스팅(Die Casting)은 고압을 이용해 용융 금속을 금형 내로 빠르게 주입하여 복잡한 형상을 가진 금속 부품을 고속으로 생산하는 공정입니다.
-
-정밀한 치수, 매끄러운 표면, 높은 생산성을 달성할 수 있는 것이 특징입니다.
-
----
-
-### [주조 공정 단계]
-
-1. 용융 단계 (Melting)
-   - 금속을 고온에서 녹이는 과정입니다.
-   - 용해로를 통해 일정 온도로 금속을 유지하며, 주입 가능한 액체 상태를 만듭니다.
-   - 이 단계에서 금속의 균질성과 온도 관리가 매우 중요합니다.
-                    
-
-2. 충진 단계 (Filling)
-   - 녹인 금속을 금형 내부로 주입하는 단계입니다.
-   - 주입 속도, 주입 압력, 금형 설계에 따라 내부 충진 상태가 달라지고,
-     제품 내부 결함(공극, 불균질 등)에 영향을 줍니다.
-   - 일부 공정에서는 전자 교반(EMS)을 통해 금속 혼합을 개선하기도 합니다.
-                    
-
-3. 냉각 단계 (Cooling)
-   - 주입된 금속이 금형 내에서 응고되는 단계입니다.
-   - 금속의 냉각 속도와 금형 온도를 적절히 제어해야 수축, 변형, 내부 응력 등을 최소화할 수 있습니다.
-   - 냉각수와 금형 온도 관리가 주요 역할을 합니다.
-                    
-
-4. 공정 속도 및 장비 운전
-   - 장비 사이클 시간과 실제 생산 속도는 공정 효율과 품질 안정성에 직결됩니다.
-   - 장비 가동 상태, 비상 정지 여부 등을 관리하며 생산 계획에 따라 운용됩니다.
-                    
-
-5. 품질 평가 (Inspection)
-   - 최종 주조물은 두께, 강도 등 물리적 특성을 평가합니다.
-   - 합격/불합격(pass/fail) 여부를 결정하며, 이를 기반으로 공정 최적화와 품질 개선을 수행합니다.
----
-
-### [요약]
-
-본 데이터 분석에서는 위와 같은 공정 단계별 데이터를 활용하여, 주조 조건(온도, 속도, 금형, 가열로 등)이 최종 양품/불량(passorfail)에
-어떤 영향을 주는지 탐색하고 시각화하였습니다.
-이를 통해 주조 공정의 주요 인자들을 이해하고, 품질 개선 및 불량 감소에 기여할 수 있는 근거를 마련할 수 있습니다.
-
-
-""")
-    )
-),
-
+        ),
 
         # 2. 데이터 탐색 (EDA)
         ui.nav_panel(
             "데이터 탐색",
-            ui.layout_sidebar(
-                ui.sidebar(
-                    #분포 필터
-                    ui.div(
-                        f"데이터 분포 그래프 필터",
-                        style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+            ui.navset_tab(
+                ui.nav_panel(
+                    "개요",
+                        # -------------------- 상단 SVG + 버튼 --------------------
+                        ui.div(
+                            {"style": "position: relative; display:flex; justify-content:center;"},
+                            ui.HTML(svg_code),
+                            *[
+                                ui.input_action_button(
+                                    f"btn_{lbl['id']}", "",
+                                    style=f"""
+                                        position:absolute;
+                                        top:{lbl['y']}px; left:calc(50% - 500px + {lbl['x']}px);
+                                        width:{lbl['w']}px; height:{lbl['h']}px;
+                                        opacity:0; cursor:pointer;
+                                    """
+                                )
+                                for lbl in labels
+                            ]
+                        ),
+
+                        # -------------------- JS 코드 삽입 --------------------
+                        ui.tags.script("""
+                            Shiny.addCustomMessageHandler("switch_tab_with_label", function(msg) {
+                                let tabs = document.querySelectorAll('.nav-link');
+                                tabs.forEach(function(tab) {
+                                    if (tab.textContent.trim() === msg.tab) {
+                                        tab.click();
+                                    }
+                                });
+                            });
+                        """),
+
+                        # -------------------- 설명 영역 --------------------
+                        ui.div(
+                            {
+                                "style": """
+                                    margin-top:30px; 
+                                    padding:20px; 
+                                    border:1px solid #ddd; 
+                                    border-radius:10px; 
+                                    background:#fafafa;
+                                """
+                            },
+                            ui.markdown("""
+
+                                ### [주조 공정]
+
+                                주조(Casting)는 금속을 녹여 원하는 형상을 만드는 제조 공정입니다.
+                                고체 상태의 금속을 고온에서 녹여 액체 상태로 만든 뒤, 미리 준비된 금형에 부어 응고시키면 제품 형태가 완성됩니다.
+
+                                주조 공정은 복잡한 형상, 대량 생산, 재료 절감이 가능하여 자동차, 기계 부품 등 다양한 산업 분야에서 널리 활용됩니다.
+
+
+                                주요 목적:
+                                - 금속을 원하는 형상과 치수로 성형
+                                - 기계적 강도와 품질 확보
+                                - 공정 효율 및 생산성 향상
+
+                                ---
+
+                                ### [다이캐스팅 공정]
+
+                                다이캐스팅(Die Casting)은 고압을 이용해 용융 금속을 금형 내로 빠르게 주입하여 복잡한 형상을 가진 금속 부품을 고속으로 생산하는 공정입니다.
+
+                                정밀한 치수, 매끄러운 표면, 높은 생산성을 달성할 수 있는 것이 특징입니다.
+
+                                ---
+
+                                ### [주조 공정 단계]
+
+                                1. 용융 단계 (Melting)
+                                - 금속을 고온에서 녹이는 과정입니다.
+                                - 용해로를 통해 일정 온도로 금속을 유지하며, 주입 가능한 액체 상태를 만듭니다.
+                                - 이 단계에서 금속의 균질성과 온도 관리가 매우 중요합니다.
+                                                    
+
+                                2. 충진 단계 (Filling)
+                                - 녹인 금속을 금형 내부로 주입하는 단계입니다.
+                                - 주입 속도, 주입 압력, 금형 설계에 따라 내부 충진 상태가 달라지고,
+                                    제품 내부 결함(공극, 불균질 등)에 영향을 줍니다.
+                                - 일부 공정에서는 전자 교반(EMS)을 통해 금속 혼합을 개선하기도 합니다.
+                                                    
+
+                                3. 냉각 단계 (Cooling)
+                                - 주입된 금속이 금형 내에서 응고되는 단계입니다.
+                                - 금속의 냉각 속도와 금형 온도를 적절히 제어해야 수축, 변형, 내부 응력 등을 최소화할 수 있습니다.
+                                - 냉각수와 금형 온도 관리가 주요 역할을 합니다.
+                                                    
+
+                                4. 공정 속도 및 장비 운전
+                                - 장비 사이클 시간과 실제 생산 속도는 공정 효율과 품질 안정성에 직결됩니다.
+                                - 장비 가동 상태, 비상 정지 여부 등을 관리하며 생산 계획에 따라 운용됩니다.
+                                                    
+
+                                5. 품질 평가 (Inspection)
+                                - 최종 주조물은 두께, 강도 등 물리적 특성을 평가합니다.
+                                - 합격/불합격(pass/fail) 여부를 결정하며, 이를 기반으로 공정 최적화와 품질 개선을 수행합니다.
+                                ---
+
+                                ### [요약]
+
+                                본 데이터 분석에서는 위와 같은 공정 단계별 데이터를 활용하여, 주조 조건(온도, 속도, 금형, 가열로 등)이 최종 양품/불량(passorfail)에
+                                어떤 영향을 주는지 탐색하고 시각화하였습니다.
+                                이를 통해 주조 공정의 주요 인자들을 이해하고, 품질 개선 및 불량 감소에 기여할 수 있는 근거를 마련할 수 있습니다.
+
+
+                                """)
+                                )    
+                ),
+                ui.nav_panel("그래프",
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            #분포 필터
+                            ui.div(
+                                f"데이터 분포 그래프 필터",
+                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                            ),
+                            ui.input_selectize(
+                                "mold_code2",
+                                "Mold Code 선택",
+                                choices=list(map(str, sorted(df_explore["mold_code"].dropna().unique())))
+                            ),
+                            ui.input_select(
+                                "var",
+                                "분석 변수 선택",
+                                choices={c: get_label(c) for c in df_explore.columns if c not in ["mold_code", "passorfail"]}
+                            ),
+                            ui.output_ui("filter_ui"),   # ★ 선택된 변수에 맞는 필터 UI
+                        ),
+                        ui.card(
+                            ui.card_header("데이터 분포"),
+                                ui.output_plot("dist_plot"),
+                        ),
                     ),
-                    ui.input_selectize(
-                        "mold_code2",
-                        "Mold Code 선택",
-                        choices=list(map(str, sorted(df_explore["mold_code"].dropna().unique())))
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            # 시계열 필터
+                            ui.div(
+                                f"시계열 데이터 필터",
+                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                            ),
+                            ui.input_select(
+                                "ts_var", "Y축 변수 선택",
+                                choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]}
+                                # choices=[c for c in df_raw.columns if c not in ["id","line","name","mold_name","date","time", "registration_time"]]
+                            ),
+                            ui.output_ui("ts_filter_ui")   # 시계열 전용 시간 필터
+                        ),
+                        ui.card(
+                            ui.card_header("시계열 데이터"),
+                                output_widget("timeseries_plot")
+                        ),
                     ),
-                    ui.input_select(
-                        "var",
-                        "분석 변수 선택",
-                        choices={c: get_label(c) for c in df_explore.columns if c not in ["mold_code", "passorfail"]}
+                    ui.layout_columns(
+                        # 1행
+                        ui.card(
+                            ui.card_header("데이터 요약"),
+                            ui.output_table("df_summary"),
+                        ),
+                        ui.card(
+                            ui.card_header("컬럼별 결측치 비율"),
+                            ui.output_plot("missing_plot"),
+                        ),
+                        # 2행
+                        ui.card(
+                            ui.card_header("변수 타입 분포"),
+                            ui.output_plot("dtype_pie"),
+                        ),
+                        ui.card(
+                            ui.card_header("수치형 변수 상관관계"),
+                            ui.output_plot("corr_heatmap_overview"),
+                        ),
+                        col_widths=[6, 6],  # 2열 레이아웃
                     ),
-                    ui.output_ui("filter_ui"),   # ★ 선택된 변수에 맞는 필터 UI
-                ),
-                ui.card(
-                    ui.card_header("데이터 분포"),
-                        ui.output_plot("dist_plot"),
-                ),
-            ),
-            ui.layout_sidebar(
-                ui.sidebar(
-                    # 시계열 필터
-                    ui.div(
-                        f"시계열 데이터 필터",
-                        style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
-                    ),
-                    ui.input_select(
-                        "ts_var", "Y축 변수 선택",
-                        choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]}
-                        # choices=[c for c in df_raw.columns if c not in ["id","line","name","mold_name","date","time", "registration_time"]]
-                    ),
-                    ui.output_ui("ts_filter_ui")   # 시계열 전용 시간 필터
-                ),
-                ui.card(
-                    ui.card_header("시계열 데이터"),
-                        output_widget("timeseries_plot")
-                ),
-            ),
-            ui.layout_columns(
-                # 1행
-                ui.card(
-                    ui.card_header("데이터 요약"),
-                    ui.output_table("df_summary"),
-                ),
-                ui.card(
-                    ui.card_header("컬럼별 결측치 비율"),
-                    ui.output_plot("missing_plot"),
-                ),
-                # 2행
-                ui.card(
-                    ui.card_header("변수 타입 분포"),
-                    ui.output_plot("dtype_pie"),
-                ),
-                ui.card(
-                    ui.card_header("수치형 변수 상관관계"),
-                    ui.output_plot("corr_heatmap_overview"),
-                ),
-                col_widths=[6, 6],  # 2열 레이아웃
-            ),
+                )
+            )
         ),
 
         # 3. 전처리 과정
@@ -558,12 +619,30 @@ app_ui = ui.page_fluid(
                 )
             )
         ),
+        id="main_nav",   # ⭐ 탭 컨트롤을 위한 id
     )
 )
 
 
 # ===== SERVER (변경 없음) =====
 def server(input, output, session):
+    #====== 개요에서 카드 클릭 시 탭이동 =================================
+    @reactive.Effect
+    @reactive.event(input.go_explore)
+    def _():
+        update_navs("main_nav", selected="데이터 탐색")
+
+    @reactive.Effect
+    @reactive.event(input.go_predict)
+    def _():
+        update_navs("main_nav", selected="예측")
+
+    @reactive.Effect
+    @reactive.event(input.go_model)
+    def _():
+        update_navs("main_nav", selected="모델 학습")
+    #=================================================================
+
     # 서버 함수 안에
     @reactive.effect
     @reactive.event(input.goto_explore)
@@ -592,7 +671,7 @@ def server(input, output, session):
         async def _(lbl=lbl):
             # 1️⃣ 탭 전환 (비동기 → await 필요)
             await session.send_custom_message("switch_tab_with_label", {
-                "tab": "데이터 탐색",
+                "tab": "그래프",
                 "label": lbl["var"]
             })
             # 2️⃣ 드롭다운 선택값 업데이트 (동기 → await 쓰면 안됨)

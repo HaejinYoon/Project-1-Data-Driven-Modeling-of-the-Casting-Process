@@ -321,146 +321,131 @@ app_ui = ui.page_fluid(
     """),
 
     ui.navset_tab(
-        # # 1. Overview
-        # # ===== 네비게이션 탭 =====
+        # 1. Overview
+        # ===== 네비게이션 탭 =====
+        ui.nav_panel("개요",
+            ui.HTML("""
+            <style>
+                /* 카드 hover 효과 */
+                .overview-card {
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    cursor: pointer;
+                    margin-top: 20px; /* 카드 살짝 아래로 이동 */
+                    position: relative;
+                }
+                .overview-card:hover {
+                    transform: scale(1.03);
+                    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+                }
+                /* 카드 하단 [바로가기] 텍스트 */
+                .card-link-text {
+                    display: block;
+                    text-align: center;
+                    font-weight: bold;
+                    font-size: 16px;
+                    color: black; /* 기본 글자색 */
+                    margin-top: 10px;
+                    transition: color 0.3s ease;
+                }
+                .overview-card:hover .card-link-text {
+                    color: white; /* hover 시 흰색 */
+                }
+            </style>
 
-    # 1. Overview
-    # ===== 네비게이션 탭 =====
-    ui.nav_panel("개요",
-        ui.HTML("""
-        <style>
-            /* 카드 hover 효과 */
-            .overview-card {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-                cursor: pointer;
-                margin-top: 20px; /* 카드 살짝 아래로 이동 */
-                position: relative;
-            }
-            .overview-card:hover {
-                transform: scale(1.03);
-                box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            }
-            /* 카드 하단 [바로가기] 텍스트 */
-            .card-link-text {
-                display: block;
-                text-align: center;
-                font-weight: bold;
-                font-size: 16px;
-                color: black; /* 기본 글자색 */
-                margin-top: 10px;
-                transition: color 0.3s ease;
-            }
-            .overview-card:hover .card-link-text {
-                color: white; /* hover 시 흰색 */
-            }
-        </style>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    const cards = document.querySelectorAll(".overview-card");
+                    const actions = ["go_explore", "go_predict", "go_model"];
 
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const cards = document.querySelectorAll(".overview-card");
-                const actions = ["go_explore", "go_predict", "go_model"];
-
-                cards.forEach(function(card, index) {
-                    card.addEventListener("click", function() {
-                        Shiny.setInputValue(actions[index], Math.random(), {priority: "event"});
+                    cards.forEach(function(card, index) {
+                        card.addEventListener("click", function() {
+                            Shiny.setInputValue(actions[index], Math.random(), {priority: "event"});
+                        });
                     });
                 });
-            });
-        </script>
-        """),
-        ui.layout_columns(
+            </script>
+            """),
+            ui.layout_columns(
 
-            # 1️⃣ 데이터 탐색 (파스텔 노랑)
-            ui.card(
-                {"class": "overview-card", "style": "border: 2px solid #FFE082; color: #F9A825;"},
-                ui.card_header(
-                    "데이터 탐색",
-                    style=(
-                        "background-color: #FFE082; color: #333; "
-                        "font-weight:bold; font-size:20px; text-align:center; "
-                        "padding-top:15px; padding-bottom:15px;"
-                    )
+                # 1️⃣ 데이터 탐색 (파스텔 노랑)
+                ui.card(
+                    {"class": "overview-card", "style": "border: 2px solid #FFE082; color: #F9A825;"},
+                    ui.card_header(
+                        "데이터 탐색",
+                        style=(
+                            "background-color: #FFE082; color: #333; "
+                            "font-weight:bold; font-size:20px; text-align:center; "
+                            "padding-top:15px; padding-bottom:15px;"
+                        )
+                    ),
+                    ui.tags.img(
+                        src="1.png",
+                        style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
+                    ),
+                    ui.HTML(
+                        """
+                        <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
+                            주조 공정에 대한 이해를 돕고<br>
+                            사용 데이터에 대한 탐색 기능을 제공합니다.
+                        </p>
+                        """
+                    ),
+                    ui.tags.p("[바로가기]", class_="card-link-text")
                 ),
-                ui.tags.img(
-                    src="1.png",
-                    style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
+
+                # 2️⃣ 예측 (파스텔 연두)
+                ui.card(
+                    {"class": "overview-card", "style": "border: 2px solid #C8E6C9; color: #388E3C;"},
+                    ui.card_header(
+                        "예측",
+                        style=(
+                            "background-color: #C8E6C9; color: #333; "
+                            "font-weight:bold; font-size:20px; text-align:center; "
+                            "padding-top:15px; padding-bottom:15px;"
+                        )
+                    ),
+                    ui.tags.img(
+                        src="3.png",
+                        style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
+                    ),
+                    ui.HTML(
+                        """
+                        <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
+                            모델 예측 기능을 통해 입력된 공정 조건을 바탕으로<br>
+                            생산품의 품질 결과 예측을 제공합니다.
+                        </p>
+                        """
+                    ),
+                    ui.tags.p("[바로가기]", class_="card-link-text")
                 ),
-                ui.HTML(
-                    """
-                    <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
-                        주조 공정에 대한 이해를 돕고<br>
-                        사용 데이터에 대한 탐색 기능을 제공합니다.
-                    </p>
-                    """
+
+                # 3️⃣ 모델링 (파스텔 하늘색)
+                ui.card(
+                    {"class": "overview-card", "style": "border: 2px solid #B3E5FC; color: #0277BD;"},
+                    ui.card_header(
+                        "모델링",
+                        style=(
+                            "background-color: #B3E5FC; color: #333; "
+                            "font-weight:bold; font-size:20px; text-align:center; "
+                            "padding-top:15px; padding-bottom:15px;"
+                        )
+                    ),
+                    ui.tags.img(
+                        src="2.png",
+                        style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
+                    ),
+                    ui.HTML(
+                        """
+                        <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
+                            개발 시도한 모델 정보와<br>
+                            최종 선정한 모델에 대한 설명과 근거를 제공합니다.                        
+                        </p>
+                        """
+                    ),
+                    ui.tags.p("[바로가기]", class_="card-link-text")
                 ),
-                ui.tags.p("[바로가기]", class_="card-link-text")
-            ),
-
-
-
-
-            # 2️⃣ 예측 (파스텔 연두)
-            ui.card(
-                {"class": "overview-card", "style": "border: 2px solid #C8E6C9; color: #388E3C;"},
-                ui.card_header(
-                    "예측",
-                    style=(
-                        "background-color: #C8E6C9; color: #333; "
-                        "font-weight:bold; font-size:20px; text-align:center; "
-                        "padding-top:15px; padding-bottom:15px;"
-                    )
-                ),
-                ui.tags.img(
-                    src="3.png",
-                    style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
-                ),
-                ui.HTML(
-                    """
-                    <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
-                        모델 예측 기능을 통해 입력된 공정 조건을 바탕으로<br>
-                        생산품의 품질 결과 예측을 제공합니다.
-                    </p>
-                    """
-                ),
-                ui.tags.p("[바로가기]", class_="card-link-text")
-            ),
-
-            # 3️⃣ 모델링 (파스텔 하늘색)
-            ui.card(
-                {"class": "overview-card", "style": "border: 2px solid #B3E5FC; color: #0277BD;"},
-                ui.card_header(
-                    "모델링",
-                    style=(
-                        "background-color: #B3E5FC; color: #333; "
-                        "font-weight:bold; font-size:20px; text-align:center; "
-                        "padding-top:15px; padding-bottom:15px;"
-                    )
-                ),
-                ui.tags.img(
-                    src="2.png",
-                    style="width:100%; height:400px; object-fit:cover; margin-bottom:10px; border-radius:8px;"
-                ),
-                ui.HTML(
-                    """
-                    <p style="font-size:16px; line-height:1.5; text-align:center; margin:15px 10px; color:#333;">
-                        개발 시도한 모델 정보와<br>
-                        최종 선정한 모델에 대한 설명과 근거를 제공합니다.                        
-                    </p>
-                    """
-                ),
-                ui.tags.p("[바로가기]", class_="card-link-text")
-            ),
-        )
-    ),
-
-
-
-
-
-
-
-
-
+            )
+        ),
 
         # 2. 데이터 탐색 (EDA)
         ui.nav_panel(
@@ -651,8 +636,6 @@ app_ui = ui.page_fluid(
         #     # ui.card(ui.card_header("이상치 처리 결과"), ui.output_plot("outlier_plot"))
         # ),
 
-        
-
         # 5. 예측
         ui.nav_panel(
             "예측",
@@ -816,31 +799,35 @@ app_ui = ui.page_fluid(
                     ),
 
                     ui.hr(),
-
-                 
-                                        ),
+                ),
                 ui.nav_panel("개선",
-    ui.card(
-        ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
-        ui.card_body(
-            ui.navset_tab(
-                ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
-                ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
-                ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot")),
-                ui.nav_panel("불량 기여 요인",
-    ui.card(
-        ui.card_header("불량 기여 요인 Top 5"),
-        ui.output_plot("local_factor_plot"),
-        ui.hr(),
-        ui.output_ui("local_factor_desc")   # ← 설명 칸 추가
-    )
-)
+                    ui.card(
+                        ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
+                        ui.card_body(
+                            ui.navset_tab(
+                                ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
+                                ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
+                                ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot")),
+                                ui.nav_panel("불량 기여 요인",
+                    ui.card(
+                        ui.card_header("불량 기여 요인 Top 5"),
+                        ui.output_plot("local_factor_plot"),
+                        ui.hr(),
+                        ui.output_ui("local_factor_desc")   # ← 설명 칸 추가
+                    )
+                )
             )
         )
     )
 ),
 
             )
+        ),
+        # 4. 모델 학습
+        ui.nav_panel(
+            "모델 학습",
+            # ui.card(ui.card_header("변수 중요도"), ui.output_plot("feature_importance_plot")),
+            # ui.card(ui.card_header("모델 성능"), ui.output_plot("model_eval_plot"))
         ),
         id="main_nav",   # ⭐ 탭 컨트롤을 위한 id
     )

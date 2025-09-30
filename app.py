@@ -25,9 +25,28 @@ model = joblib.load(MODEL_PATH)
 # ===== 데이터 불러오기 =====
 df_raw = pd.read_csv("./data/train_raw.csv")
 
+# ★ 특정 이상치 행 제거
+df_raw = df_raw[
+    (df_raw["low_section_speed"] != 65535) &
+    (df_raw["lower_mold_temp3"] != 65503) &
+    (df_raw["physical_strength"] != 65535)
+]
+
+# 예측용 데이터도 동일 처리
+df_predict = pd.read_csv("./data/train.csv")
+df_predict["pressure_speed_ratio"] = df_predict["pressure_speed_ratio"].replace([np.inf, -np.inf], np.nan)
+
+
 # 예측 탭용 (모델 input 그대로)
 df_predict = pd.read_csv("./data/train.csv")
 df_predict["pressure_speed_ratio"] = df_predict["pressure_speed_ratio"].replace([np.inf, -np.inf], np.nan)
+
+df_predict = df_predict[
+    (df_predict["low_section_speed"] != 65535) &
+    (df_predict["lower_mold_temp3"] != 65503) &
+    (df_predict["physical_strength"] != 65535)
+]
+
 # 탐색 탭용 (필터링/EDA)
 drop_cols_explore = ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]
 df_explore = df_raw.drop(columns=drop_cols_explore)

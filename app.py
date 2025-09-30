@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
 from shiny import App, ui, render, reactive
-from shiny.ui import update_slider, update_numeric
+from shiny.ui import update_slider, update_numeric, update_select
 import seaborn as sns
 import pathlib
 import plotly.express as px
@@ -59,18 +59,18 @@ label_map = {
     "molten_temp": "용탕 온도",
     "facility_operation_cycleTime": "설비 작동 사이클타임",
     "production_cycletime": "생산 사이클타임",
-    "low_section_speed": "저속 구간 속도",
-    "high_section_speed": "고속 구간 속도",
-    "molten_volume": "용탕 주입량",
-    "cast_pressure": "주조 압력",
+    "low_section_speed": "하위 구간 주입 속도",
+    "high_section_speed": "상위 구간 주입 속도",
+    "molten_volume": "주입한 금속 양",
+    "cast_pressure": "주입 압력",
     "biscuit_thickness": "비스킷 두께",
-    "upper_mold_temp1": "상금형1 온도",
-    "upper_mold_temp2": "상금형2 온도",
-    "upper_mold_temp3": "상금형3 온도",
-    "lower_mold_temp1": "하금형1 온도",
-    "lower_mold_temp2": "하금형2 온도",
-    "lower_mold_temp3": "하금형3 온도",
-    "sleeve_temperature": "슬리브 온도",
+    "upper_mold_temp1": "상부금형1 온도",
+    "upper_mold_temp2": "상부금형2 온도",
+    "upper_mold_temp3": "상부금형3 온도",
+    "lower_mold_temp1": "하부금형1 온도",
+    "lower_mold_temp2": "하부금형2 온도",
+    "lower_mold_temp3": "하부금형3 온도",
+    "sleeve_temperature": "주입 관 온도",
     "physical_strength": "물리적 강도",
     "Coolant_temperature": "냉각수 온도",
     "EMS_operation_time": "EMS 작동 시간",
@@ -79,6 +79,18 @@ label_map = {
     "shift": "주, 야간 조",
     "tryshot_signal": "시험 가동 여부"
 }
+
+# ===== 라벨 정의 (표시 텍스트 = 한글, 실제 var = 변수명) =====
+labels = [
+    {"id": "label1", "text": label_map["upper_mold_temp1"], "var": "upper_mold_temp1", "x": 250, "y": 30, "w": 100, "h": 30, "arrow_to": (300, 150)},
+    {"id": "label2", "text": label_map["lower_mold_temp1"], "var": "lower_mold_temp1", "x": 700, "y": 30, "w": 100, "h": 30, "arrow_to": (750, 250)},
+    {"id": "label3", "text": label_map["cast_pressure"], "var": "cast_pressure", "x": 850, "y": 200, "w": 100, "h": 30, "arrow_to": (700, 270)},
+    {"id": "label4", "text": label_map["molten_volume"], "var": "molten_volume", "x": 750, "y": 120, "w": 120, "h": 30, "arrow_to": (700, 180)},
+    {"id": "label5", "text": label_map["sleeve_temperature"], "var": "sleeve_temperature", "x": 600, "y": 350, "w": 120, "h": 30, "arrow_to": (650, 300)},
+    {"id": "label6", "text": label_map["high_section_speed"], "var": "high_section_speed", "x": 550, "y": 80, "w": 160, "h": 30, "arrow_to": (600, 200)},
+    {"id": "label7", "text": label_map["low_section_speed"], "var": "low_section_speed", "x": 400, "y": 400, "w": 160, "h": 30, "arrow_to": (500, 300)},
+]
+
 def get_label(col): return label_map.get(col, col)
 
 # ===== Helper: 슬라이더 + 인풋 =====
@@ -102,6 +114,39 @@ def make_select(col, label=None, width="100%"):
         choices = sorted(df_predict[col].dropna().unique().astype(str)) + ["없음"]
     return ui.input_select(col, label, choices=choices, width=width)
 
+def make_svg(labels):
+    parts = []
+    for lbl in labels:
+        # 박스 중앙 = 화살표 시작점
+        cx = lbl["x"] + lbl["w"]/2
+        cy = lbl["y"] + lbl["h"]/2
+        x2, y2 = lbl["arrow_to"]
+        text = label_map.get(lbl["var"], lbl["var"])
+
+        parts.append(f"""
+        <g>
+        <rect x="{lbl['x']}" y="{lbl['y']}" width="{lbl['w']}" height="{lbl['h']}" 
+                fill="#e0e6ef" stroke="black"/>
+        <text x="{lbl['x']+10}" y="{lbl['y']+20}" fill="black" 
+                font-size="14" font-weight="bold">{text}</text>
+        <line x1="{cx}" y1="{cy}" x2="{x2}" y2="{y2}" 
+                stroke="red" marker-end="url(#arrow)"/>
+        </g>
+        """)
+    return "\n".join(parts)
+
+svg_code = f"""
+<svg width="1000" height="500" xmlns="http://www.w3.org/2000/svg">
+  <image href="die-castings.gif" width="1000" height="500"/>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L6,3 z" fill="red"/>
+    </marker>
+  </defs>
+  {make_svg(labels)}
+</svg>
+"""
+
 # ===== UI =====
 app_ui = ui.page_fluid(
     ui.head_content(
@@ -122,18 +167,33 @@ app_ui = ui.page_fluid(
         # 1. Overview
         ui.nav_panel(
             "개요",
-            ui.img(src="die-castings.gif", style="max-width:100%; height:500px; display:block; margin:0 auto;"),
-
-            # 오른쪽: 각 탭으로 가는 버튼들
-            ui.card(
-                ui.card_header("빠른 이동"),
-                ui.card_body(
-                    ui.input_action_button("goto_explore", "데이터 탐색", class_="btn btn-outline-primary w-100 mb-2"),
-                    ui.input_action_button("goto_preprocess", "전처리", class_="btn btn-outline-secondary w-100 mb-2"),
-                    ui.input_action_button("goto_train", "모델 학습", class_="btn btn-outline-success w-100 mb-2"),
-                    ui.input_action_button("goto_predict", "예측", class_="btn btn-outline-danger w-100"),
-                )
-            )
+            ui.div(
+                {"style": "position: relative; display:flex; justify-content:center;"},
+                ui.HTML(svg_code),
+                *[
+                    ui.input_action_button(
+                        f"btn_{lbl['id']}", "",
+                        style=f"""
+                            position:absolute;
+                            top:{lbl['y']}px; left:calc(50% - 500px + {lbl['x']}px);
+                            width:{lbl['w']}px; height:{lbl['h']}px;
+                            opacity:0; cursor:pointer;
+                        """
+                    )
+                    for lbl in labels
+                ]
+            ),
+            # -------------------- JS 코드 삽입 --------------------
+            ui.tags.script("""
+                Shiny.addCustomMessageHandler("switch_tab_with_label", function(msg) {
+                    let tabs = document.querySelectorAll('.nav-link');
+                    tabs.forEach(function(tab) {
+                        if (tab.textContent.trim() === msg.tab) {
+                            tab.click();
+                        }
+                    });
+                });
+            """)
         ),
 
         # 2. 데이터 탐색 (EDA)
@@ -419,6 +479,31 @@ def server(input, output, session):
     @reactive.event(input.goto_predict)
     def _():
         ui.update_navs("main_tabs", selected="예측")
+
+    # 버튼 클릭 시 탭 전환
+    for lbl in labels:
+        @reactive.Effect
+        @reactive.event(getattr(input, f"btn_{lbl['id']}"))
+        async def _(lbl=lbl):
+            # 1️⃣ 탭 전환 (비동기 → await 필요)
+            await session.send_custom_message("switch_tab_with_label", {
+                "tab": "데이터 탐색",
+                "label": lbl["var"]
+            })
+            # 2️⃣ 드롭다운 선택값 업데이트 (동기 → await 쓰면 안됨)
+            session.send_input_message(
+                "var",
+                update_select("var", selected=lbl["var"])
+            )
+            session.send_input_message(
+                "ts_var",
+                update_select("ts_var", selected=lbl["var"])
+            )
+
+    @output
+    @render.text
+    def selected_var():
+        return f"현재 선택된 변수: {input.var() or '없음'}"
 
     last_proba = reactive.value(None)
     loading = reactive.value(False)

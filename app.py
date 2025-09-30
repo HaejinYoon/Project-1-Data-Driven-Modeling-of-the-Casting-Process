@@ -82,13 +82,33 @@ label_map = {
 
 # ===== 라벨 정의 (표시 텍스트 = 한글, 실제 var = 변수명) =====
 labels = [
-    {"id": "label1", "text": label_map["upper_mold_temp1"], "var": "upper_mold_temp1", "x": 250, "y": 30, "w": 100, "h": 30, "arrow_to": (300, 150)},
-    {"id": "label2", "text": label_map["lower_mold_temp1"], "var": "lower_mold_temp1", "x": 700, "y": 30, "w": 100, "h": 30, "arrow_to": (750, 250)},
-    {"id": "label3", "text": label_map["cast_pressure"], "var": "cast_pressure", "x": 850, "y": 200, "w": 100, "h": 30, "arrow_to": (700, 270)},
-    {"id": "label4", "text": label_map["molten_volume"], "var": "molten_volume", "x": 750, "y": 120, "w": 120, "h": 30, "arrow_to": (700, 180)},
-    {"id": "label5", "text": label_map["sleeve_temperature"], "var": "sleeve_temperature", "x": 600, "y": 350, "w": 120, "h": 30, "arrow_to": (650, 300)},
-    {"id": "label6", "text": label_map["high_section_speed"], "var": "high_section_speed", "x": 550, "y": 80, "w": 160, "h": 30, "arrow_to": (600, 200)},
-    {"id": "label7", "text": label_map["low_section_speed"], "var": "low_section_speed", "x": 400, "y": 400, "w": 160, "h": 30, "arrow_to": (500, 300)},
+    {"id": "label1", "text": label_map["upper_mold_temp1"], "var": "upper_mold_temp1",
+     "x": 200, "y": 50, "w": 120, "h": 30,
+     "arrow_from": (200+60, 80), "arrow_to": (400, 160)},  # 아랫변 중앙
+
+    {"id": "label2", "text": label_map["lower_mold_temp1"], "var": "lower_mold_temp1",
+     "x": 650, "y": 50, "w": 120, "h": 30,
+     "arrow_from": (650+60, 80), "arrow_to": (580, 160)},  # 아랫변 중앙
+
+    {"id": "label3", "text": label_map["cast_pressure"], "var": "cast_pressure",
+     "x": 900, "y": 250, "w": 100, "h": 30,
+     "arrow_from": (900+50, 280), "arrow_to": (780, 360)},  # 아랫변 중앙
+
+    {"id": "label4", "text": label_map["molten_volume"], "var": "molten_volume",
+     "x": 700, "y": 150, "w": 120, "h": 30,
+     "arrow_from": (700+60, 180), "arrow_to": (780, 280)},  # 아랫변 중앙
+
+    {"id": "label5", "text": label_map["sleeve_temperature"], "var": "sleeve_temperature",
+     "x": 670, "y": 400, "w": 120, "h": 30,
+     "arrow_from": (670+60, 400), "arrow_to": (600, 360)},  # 윗변 중앙
+
+    {"id": "label6", "text": label_map["high_section_speed"], "var": "high_section_speed",
+     "x": 400, "y": 70, "w": 160, "h": 30,
+     "arrow_from": (400+80, 100), "arrow_to": (510, 180)},  # 아랫변 중앙
+
+    {"id": "label7", "text": label_map["low_section_speed"], "var": "low_section_speed",
+     "x": 400, "y": 420, "w": 160, "h": 30,
+     "arrow_from": (400+80, 420), "arrow_to": (510, 320)},  # 윗변 중앙
 ]
 
 def get_label(col): return label_map.get(col, col)
@@ -117,9 +137,13 @@ def make_select(col, label=None, width="100%"):
 def make_svg(labels):
     parts = []
     for lbl in labels:
-        # 박스 중앙 = 화살표 시작점
-        cx = lbl["x"] + lbl["w"]/2
-        cy = lbl["y"] + lbl["h"]/2
+        # 화살표 시작점: arrow_from 있으면 사용, 없으면 중앙
+        if "arrow_from" in lbl:
+            cx, cy = lbl["arrow_from"]
+        else:
+            cx = lbl["x"] + lbl["w"]/2
+            cy = lbl["y"] + lbl["h"]/2
+
         x2, y2 = lbl["arrow_to"]
         text = label_map.get(lbl["var"], lbl["var"])
 
@@ -127,8 +151,9 @@ def make_svg(labels):
         <g>
         <rect x="{lbl['x']}" y="{lbl['y']}" width="{lbl['w']}" height="{lbl['h']}" 
                 fill="#e0e6ef" stroke="black"/>
-        <text x="{lbl['x']+10}" y="{lbl['y']+20}" fill="black" 
-                font-size="14" font-weight="bold">{text}</text>
+        <text x="{lbl['x'] + lbl['w']/2}" y="{lbl['y'] + lbl['h']/2}" 
+                fill="black" font-size="14" font-weight="bold"
+                text-anchor="middle" dominant-baseline="middle">{text}</text>
         <line x1="{cx}" y1="{cy}" x2="{x2}" y2="{y2}" 
                 stroke="red" marker-end="url(#arrow)"/>
         </g>

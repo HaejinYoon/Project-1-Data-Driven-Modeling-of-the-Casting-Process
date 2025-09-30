@@ -29,7 +29,7 @@ df_raw = pd.read_csv("./data/train_raw.csv")
 df_predict = pd.read_csv("./data/train.csv")
 df_predict["pressure_speed_ratio"] = df_predict["pressure_speed_ratio"].replace([np.inf, -np.inf], np.nan)
 # 탐색 탭용 (필터링/EDA)
-drop_cols_explore = ["id","line","name","mold_name","date","time", "registration_time"]
+drop_cols_explore = ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]
 df_explore = df_raw.drop(columns=drop_cols_explore)
 
 # 예측에서 제외할 컬럼
@@ -214,7 +214,7 @@ app_ui = ui.page_fluid(
                     ui.input_select(
                         "var",
                         "분석 변수 선택",
-                        choices={c: get_label(c) for c in df_explore.columns if c != ["mold_code", "passorfail"]}
+                        choices={c: get_label(c) for c in df_explore.columns if c not in ["mold_code", "passorfail"]}
                     ),
                     ui.output_ui("filter_ui"),   # ★ 선택된 변수에 맞는 필터 UI
                 ),
@@ -232,7 +232,7 @@ app_ui = ui.page_fluid(
                     ),
                     ui.input_select(
                         "ts_var", "Y축 변수 선택",
-                        choices={c: get_label(c) for c in df_explore.columns if c != ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]}
+                        choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]}
                         # choices=[c for c in df_raw.columns if c not in ["id","line","name","mold_name","date","time", "registration_time"]]
                     ),
                     ui.output_ui("ts_filter_ui")   # 시계열 전용 시간 필터

@@ -806,9 +806,9 @@ app_ui = ui.page_fluid(
                         ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
                         ui.card_body(
                             ui.navset_tab(
-                                ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
-                                ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
-                                ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot")),
+                                #ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
+                                #ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
+                                #ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot")),
                                 ui.nav_panel("불량 기여 요인",
                     ui.card(
                         ui.card_header("불량 기여 요인 Top 5"),
@@ -1262,42 +1262,59 @@ def server(input, output, session):
     @output
     @render.ui
     def local_factor_desc():
-        factors = local_factors()
-        if factors is None or factors.empty:
-            return ui.markdown("아직 예측 실행 안 됨")
+     factors = local_factors()
+     if factors is None or factors.empty:
+        return ui.markdown("아직 예측 실행 안 됨")
 
-        top = factors.head(5).copy()
-        top["importance"] = top["importance"] * 100
+     top = factors.head(5).copy()
+     top["importance"] = top["importance"] * 100
 
-        # baseline 평균과 비교해서 조절 방향 안내
-        exclude_vars = ["count", "monthly_count", "global_count"]
-        use_num_cols = [c for c in num_cols if c not in exclude_vars]
-        baseline = df_predict[df_predict["passorfail"] == 0][use_num_cols].mean()
-        current = get_input_data().iloc[0][use_num_cols]
+     exclude_vars = ["count", "monthly_count", "global_count"]
+     use_num_cols = [c for c in num_cols if c not in exclude_vars]
+     baseline = df_predict[df_predict["passorfail"] == 0][use_num_cols].mean()
+     current = get_input_data().iloc[0][use_num_cols]
 
-        desc_lines = []
-        for _, row in top.iterrows():
-            feat = row["feature"]
-            importance = row["importance"]
-            col = [k for k,v in label_map.items() if v == feat]
-            if not col: continue
-            col = col[0]
+     rows_html = []
+     for _, row in top.iterrows():
+        feat = row["feature"]
+        importance = row["importance"]
 
-            if col in current.index:
-                diff = current[col] - baseline[col]
-                if abs(diff) > 1e-6:
-                    direction = "낮추세요" if diff > 0 else "올리세요"
-                    adj_val = abs(diff) / 2
-                    advice = f" → {adj_val:.1f} 단위 {direction} (현재 {current[col]:.1f}, 기준 {baseline[col]:.1f})"
-                else:
-                    advice = ""
+        col = [k for k, v in label_map.items() if v == feat]
+        if not col: 
+            continue
+        col = col[0]
+
+        left_text = f"{feat}: {importance:.1f}%"
+
+        if col in current.index:
+            diff = current[col] - baseline[col]
+            if abs(diff) > 1e-6:
+                direction = "낮추세요" if diff > 0 else "올리세요"
+                adj_val = abs(diff) / 2
+                right_text = f"{adj_val:.1f} 단위 {direction} (현재 {current[col]:.1f}, 기준 {baseline[col]:.1f})"
             else:
-                advice = ""
+                right_text = "-"
+        else:
+            right_text = "-"
 
-            desc_lines.append(f"- {feat}: {importance:.1f}% {advice}")
+        row_html = f"""
+        <div style='display:flex; align-items:center; margin-bottom:8px; font-size:15px;'>
+            <div style='flex:1; text-align:left;'>{left_text}</div>
+            <div style='flex:0.2; text-align:center;'>
+                <i class="fa-solid fa-arrow-right fa-beat" style="color:#007bff;"></i>
+            </div>
+            <div style='flex:2; text-align:left; color:#444;'>{right_text}</div>
+        </div>
+        """
+        rows_html.append(row_html)
 
-        desc_text = "이번 예측에서 불량률은 아래 요인들의 영향을 많이 받습니다:\n" + "\n".join(desc_lines)
-        return ui.markdown(desc_text)
+        desc_html = f"""
+        <div style='padding:10px;'>
+         <b>이번 예측에서 불량률은 아래 요인들의 영향을 많이 받습니다:</b>
+         <div style='margin-top:10px;'>{''.join(rows_html)}</div>
+        </div>
+        """
+     return ui.HTML(desc_html)
 
     @output
     @render.ui

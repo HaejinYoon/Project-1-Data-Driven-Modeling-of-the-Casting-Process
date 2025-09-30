@@ -46,7 +46,7 @@ drop_cols = [
 used_columns = df_predict.drop(columns=drop_cols).columns
 
 # 그룹 분류
-cat_cols = ["mold_code","working","emergency_stop","heating_furnace"]
+cat_cols = ["mold_code","working","emergency_stop","heating_furnace", "shift", "tryshot_signal"]
 num_cols = [c for c in used_columns if c not in cat_cols]
 
 # ===== 라벨 맵 =====
@@ -556,6 +556,8 @@ def server(input, output, session):
         # 범주형 변수: 첫 번째 값으로 초기화
         for col in cat_cols:
             first_val = str(sorted(df_predict[col].dropna().unique())[0])
+            if(col == "tryshot_signal"):
+                first_val = "없음"
             ui.update_select(col, selected=first_val)
 
         # 수치형 변수: 안전하게 숫자 변환 후 평균값으로 초기화
@@ -781,7 +783,7 @@ def server(input, output, session):
             categories = sorted(categories) + ["없음"]
             return ui.input_checkbox_group(
                 "filter_val",
-                f"{var} 선택",
+                f"{label_map.get(var, var)} 선택",
                 choices=categories,
                 selected=categories
             )
@@ -790,7 +792,7 @@ def server(input, output, session):
         min_val, max_val = df_explore[var].min(), df_explore[var].max()
         return ui.input_slider(
             "filter_val",
-            f"{var} 범위",
+            f"{label_map.get(var, var)} 범위",
             min=min_val, max=max_val,
             value=[min_val, max_val]
         )
@@ -839,10 +841,10 @@ def server(input, output, session):
 
         if pd.api.types.is_numeric_dtype(dff[var]):
             sns.histplot(dff[var].dropna(), kde=True, ax=ax)
-            ax.set_title(f"[{input.mold_code2()}] {var} 분포 (히스토그램)")
+            ax.set_title(f"[{input.mold_code2()}] {label_map.get(var, var)}  분포 (히스토그램)")
         else:
             sns.countplot(x=dff[var], ax=ax, order=dff[var].value_counts().index)
-            ax.set_title(f"[{input.mold_code2()}] {var} 분포 (막대그래프)")
+            ax.set_title(f"[{input.mold_code2()}] {label_map.get(var, var)}  분포 (막대그래프)")
             ax.tick_params(axis="x", rotation=45)
 
         return fig
@@ -904,6 +906,30 @@ def server(input, output, session):
             color_discrete_map={"Pass": "green", "Fail": "red"},
             title=f"{var} 시계열 값",
             labels={"registration_time_str": "등록 시간", var: var},
+            title=f"{label_map.get(var, var)} 시계열 값",
+            labels={
+                "registration_time_str": "등록 시간",
+                var: label_map.get(var, var)   # ← y축 라벨 한글 표시
+            },
+        )
+
+        # 배경 흰색 + 눈금선은 그대로 유지
+        fig.update_layout(
+            plot_bgcolor="white",   # 그래프 영역 배경
+            paper_bgcolor="white",  # 전체 영역 배경
+            xaxis=dict(
+                showline=True,       # x축 라인 보이기
+                linecolor="black",   # x축 라인 색
+                showgrid=True,       # x축 그리드 보이기
+                gridcolor="lightgray"
+            ),
+            yaxis=dict(
+                showline=True,       # y축 라인 보이기
+                linecolor="black",   # y축 라인 색
+                showgrid=True,       # y축 그리드 보이기
+                gridcolor="lightgray"
+            )
+
         )
 
         # 배경 흰색, 보조선 점선

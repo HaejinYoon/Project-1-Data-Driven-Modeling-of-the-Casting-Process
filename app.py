@@ -787,29 +787,27 @@ app_ui = ui.page_fluid(
                         """
                     ),
 
-                    ui.hr(),
                 ),
                 ui.nav_panel("개선",
                     ui.card(
-                        ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
+                        ui.card_header("불량 기여 요인 Top 5", style="background-color:#f8f9fa; text-align:center;"),
                         ui.card_body(
-                            ui.navset_tab(
+                            # ui.navset_tab(
                                 #ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
                                 #ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
                                 #ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot")),
-                                ui.nav_panel("불량 기여 요인",
-                    ui.card(
-                        ui.card_header("불량 기여 요인 Top 5"),
-                        ui.output_plot("local_factor_plot"),
-                        ui.hr(),
-                        ui.output_ui("local_factor_desc")   # ← 설명 칸 추가
+                                # ui.nav_panel("",
+                                    # ui.card(
+                                    #     ui.card_header("불량 기여 요인 Top 5"),
+                                        ui.output_plot("local_factor_plot"),
+                                        ui.hr(),
+                                        ui.output_ui("local_factor_desc")   # ← 설명 칸 추가
+                                    # )
+                                # )
+                            # )
+                        )
                     )
-                )
-            )
-        )
-    )
-),
-
+                ),
             )
         ),
         # 4. 모델 학습

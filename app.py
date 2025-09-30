@@ -307,21 +307,7 @@ app_ui = ui.page_fluid(
         """)
     ),
 
-
-    # ui.h2("주조 공정 불량 예측 대시보드", style="text-align:center;"),
-
-
-    ui.HTML("""
-        <h1 style="
-            text-align: center; 
-            font-size: 2rem; 
-            font-weight: bold; 
-            margin-top: 1cm;
-            margin-bottom: 1rem;
-        ">
-            주조 공정 불량 예측
-        </h1>
-    """),
+    ui.HTML('<h1 class="app-title bg-primary">주조 공정 불량 예측</h1>'),
 
     ui.navset_tab(
         # 1. Overview
@@ -561,7 +547,7 @@ app_ui = ui.page_fluid(
 
 
                                 """)
-                                )    
+                            )    
                 ),
                 ui.nav_panel("그래프",
                     ui.layout_sidebar(

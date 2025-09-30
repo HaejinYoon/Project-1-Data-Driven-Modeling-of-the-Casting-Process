@@ -756,7 +756,7 @@ def server(input, output, session):
             categories = sorted(categories) + ["없음"]
             return ui.input_checkbox_group(
                 "filter_val",
-                f"{var} 선택",
+                f"{label_map.get(var, var)} 선택",
                 choices=categories,
                 selected=categories
             )
@@ -765,7 +765,7 @@ def server(input, output, session):
         min_val, max_val = df_explore[var].min(), df_explore[var].max()
         return ui.input_slider(
             "filter_val",
-            f"{var} 범위",
+            f"{label_map.get(var, var)} 범위",
             min=min_val, max=max_val,
             value=[min_val, max_val]
         )
@@ -814,10 +814,10 @@ def server(input, output, session):
 
         if pd.api.types.is_numeric_dtype(dff[var]):
             sns.histplot(dff[var].dropna(), kde=True, ax=ax)
-            ax.set_title(f"[{input.mold_code2()}] {var} 분포 (히스토그램)")
+            ax.set_title(f"[{input.mold_code2()}] {label_map.get(var, var)}  분포 (히스토그램)")
         else:
             sns.countplot(x=dff[var], ax=ax, order=dff[var].value_counts().index)
-            ax.set_title(f"[{input.mold_code2()}] {var} 분포 (막대그래프)")
+            ax.set_title(f"[{input.mold_code2()}] {label_map.get(var, var)}  분포 (막대그래프)")
             ax.tick_params(axis="x", rotation=45)
 
         return fig

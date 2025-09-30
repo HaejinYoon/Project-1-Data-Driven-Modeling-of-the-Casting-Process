@@ -883,7 +883,7 @@ def server(input, output, session):
 
         dff = df_raw.copy()
         dff["registration_time"] = pd.to_datetime(dff["registration_time"], errors="coerce")
-        dff = dff.dropna(subset=["registration_time", var])
+        dff = dff.dropna(subset=["registration_time", var, "passorfail"])
         dff["registration_time_str"] = dff["registration_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
         if rng is not None:
@@ -893,25 +893,31 @@ def server(input, output, session):
         if dff.empty:
             return px.scatter(title="⚠️ 선택한 구간에 데이터 없음")
 
+        # pass/fail을 범주형으로 변환 → 색상 강제
+        dff["불량여부"] = dff["passorfail"].map({0: "Pass", 1: "Fail"})
+
         fig = px.scatter(
             dff,
             x="registration_time_str",
             y=var,
+            color="불량여부",
+            color_discrete_map={"Pass": "green", "Fail": "red"},
             title=f"{var} 시계열 값",
             labels={"registration_time_str": "등록 시간", var: var},
         )
 
-        # x축을 datetime 형식으로 보기 좋게 표시
-        fig.update_xaxes(
-            tickformat="%Y-%m-%d %H:%M",
-            tickangle=30
+        # 배경 흰색, 보조선 점선
+        fig.update_layout(
+            plot_bgcolor="white",
+            xaxis=dict(showgrid=True, gridcolor="lightgray", griddash="dot"),
+            yaxis=dict(showgrid=True, gridcolor="lightgray", griddash="dot"),
+            hovermode="x unified",
+            margin=dict(l=40, r=20, t=40, b=40),
+            legend_title_text=""  # ← 범례 제목 제거
         )
 
-        fig.update_traces(marker=dict(size=6, color="royalblue"))  # 점 크기/색 조정
-        fig.update_layout(
-            hovermode="x unified",
-            margin=dict(l=40, r=20, t=40, b=40)
-        )
+        fig.update_traces(marker=dict(size=5, opacity=0.5))
+
         return fig
 
 

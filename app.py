@@ -1124,6 +1124,21 @@ def server(input, output, session):
         )
 
         fig.update_traces(marker=dict(size=5, opacity=0.5))
+        
+        # ==== 슬라이더/버튼 추가 ====
+        fig.update_xaxes(
+            rangeslider=dict(visible=True),
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1, label="1h", step="hour", stepmode="backward"),
+                    dict(count=6, label="6h", step="hour", stepmode="backward"),
+                    dict(count=12, label="12h", step="hour", stepmode="backward"),
+                    dict(count=1, label="1d", step="day", stepmode="backward"),
+                    dict(count=7, label="1w", step="day", stepmode="backward"),
+                    dict(step="all", label="전체")
+                ])
+            )
+        )
 
         return fig
 

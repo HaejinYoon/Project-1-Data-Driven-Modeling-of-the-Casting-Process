@@ -81,7 +81,8 @@ df_predict = df_predict[
 
 # 탐색 탭용 (필터링/EDA)
 drop_cols_explore = ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]
-df_explore = df_raw.drop(columns=drop_cols_explore)
+df_explore = df_raw.drop(columns=drop_cols_explore, errors="ignore")  # ← 안전하게
+# mold_code는 남김
 
 # 예측에서 제외할 컬럼
 drop_cols = [
@@ -1324,6 +1325,35 @@ def server(input, output, session):
             ),
             style="display:flex; flex-direction:column; gap:8px;"  # 두 줄 배치
         )
+
+    @output
+    @render.plot
+    def dist_plot():
+        try:
+            var = input.var()
+            mold = input.mold_code2()
+            dff = df_explore[df_explore["mold_code"].astype(str) == mold]
+
+            if var not in dff.columns:
+                fig, ax = plt.subplots()
+                ax.text(0.5,0.5,"선택한 변수가 데이터에 없음",ha="center",va="center")
+                ax.axis("off")
+                return fig
+
+            fig, ax = plt.subplots(figsize=(6,4))
+            if pd.api.types.is_numeric_dtype(dff[var]):
+                sns.histplot(dff[var], bins=30, kde=True, ax=ax)
+            else:
+                dff[var].value_counts().plot(kind="bar", ax=ax)
+
+            ax.set_title(f"{get_label(var)} 분포 (Mold {mold})")
+            return fig
+
+        except Exception as e:
+            fig, ax = plt.subplots()
+            ax.text(0.5,0.5,f"에러: {e}",ha="center",va="center")
+            ax.axis("off")
+            return fig
 
     @output
     @render_plotly

@@ -431,12 +431,12 @@ app_ui = ui.page_fluid(
             )
         ),
 
-        # 3. 전처리 과정
-        ui.nav_panel(
-            "전처리",
-            # ui.card(ui.card_header("결측치 처리 전/후 비교"), ui.output_plot("preprocess_plot")),
-            # ui.card(ui.card_header("이상치 처리 결과"), ui.output_plot("outlier_plot"))
-        ),
+        # # 3. 전처리 과정
+        # ui.nav_panel(
+        #     "전처리",
+        #     # ui.card(ui.card_header("결측치 처리 전/후 비교"), ui.output_plot("preprocess_plot")),
+        #     # ui.card(ui.card_header("이상치 처리 결과"), ui.output_plot("outlier_plot"))
+        # ),
 
         # 4. 모델 학습
         ui.nav_panel(
@@ -448,175 +448,181 @@ app_ui = ui.page_fluid(
         # 5. 예측
         ui.nav_panel(
             "예측",
-            # 입력 변수 카드
-            ui.div(
-                ui.card(
-                    ui.card_header("입력 변수", style="background-color:#f8f9fa; text-align:center;"),
-                    ui.card_body(
-                        # 생산 환경 정보 카드 (최상단)
+            ui.navset_tab(
+                ui.nav_panel("예측",
+                    # 입력 변수 카드
+                    ui.div(
                         ui.card(
-                            ui.card_header("생산 환경 정보", style="background-color:#f8f9fa; text-align:center;"),
+                            ui.card_header("입력 변수", style="background-color:#f8f9fa; text-align:center;"),
                             ui.card_body(
-                                ui.layout_columns(
-                                    ui.div(
-                                        f"생산 라인: {df_raw['line'].iloc[0]}",
-                                        style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
-                                    ),
-                                    ui.div(
-                                        f"장비 이름: {df_raw['name'].iloc[0]}",
-                                        style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
-                                    ),
-                                    ui.div(
-                                        f"금형 이름: {df_raw['mold_name'].iloc[0]}",
-                                        style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
-                                    ),
-                                    col_widths=[4,4,4]
+                                # 생산 환경 정보 카드 (최상단)
+                                ui.card(
+                                    ui.card_header("생산 환경 정보", style="background-color:#f8f9fa; text-align:center;"),
+                                    ui.card_body(
+                                        ui.layout_columns(
+                                            ui.div(
+                                                f"생산 라인: {df_raw['line'].iloc[0]}",
+                                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                                            ),
+                                            ui.div(
+                                                f"장비 이름: {df_raw['name'].iloc[0]}",
+                                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                                            ),
+                                            ui.div(
+                                                f"금형 이름: {df_raw['mold_name'].iloc[0]}",
+                                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                                            ),
+                                            col_widths=[4,4,4]
+                                        )
+                                    )
+                                ),
+
+                                # === 공정 상태 관련 (4열) ===
+                                ui.card(
+                                    ui.card_header("공정 상태 관련", style="background-color:#f8f9fa;"),
+                                    ui.card_body(
+                                        ui.layout_columns(
+                                            ui.input_numeric("count", "일조 누적 제품 개수", value=int(df_predict["count"].mean())),
+                                            ui.input_numeric("monthly_count", "월간 누적 제품 개수", value=int(df_predict["monthly_count"].mean())),
+                                            ui.input_numeric("global_count", "전체 누적 제품 개수", value=int(df_predict["global_count"].mean())),
+                                            ui.input_numeric("speed_ratio", "상하 구역 속도 비율", value=int(df_predict["speed_ratio"].mean())),
+                                            ui.input_numeric("pressure_speed_ratio", "주조 압력 속도 비율", value=int(df_predict["pressure_speed_ratio"].mean())),
+                                            make_select("working", "장비 가동 여부"),
+                                            make_select("emergency_stop", "비상 정지 여부"),
+                                            make_select("tryshot_signal", "측정 딜레이 여부"),
+                                            make_select("shift", "주, 야간 조"),
+                                            col_widths=[3,3,3,3]
+                                        )
+                                    )
+                                ),
+
+                                # === 용융 단계 (n행 4열) ===
+                                ui.card(
+                                    ui.card_header("용융 단계", style="background-color:#f8f9fa;"),
+                                    ui.card_body(
+                                        ui.layout_columns(
+                                            make_num_slider("molten_temp"),
+                                            make_select("heating_furnace", "용해로"),
+                                            col_widths=[6,6]
+                                        )
+                                    )
+                                ),
+
+                                # === 충진 단계 (n행 4열) ===
+                                ui.card(
+                                    ui.card_header("충진 단계", style="background-color:#f8f9fa;"),
+                                    ui.card_body(
+                                        ui.layout_columns(
+                                            make_num_slider("sleeve_temperature"),
+                                            make_num_slider("EMS_operation_time"),
+                                            make_num_slider("low_section_speed"),
+                                            make_num_slider("high_section_speed"),
+                                            make_num_slider("molten_volume"),
+                                            make_num_slider("cast_pressure"),
+                                            ui.input_select("mold_code", "금형 코드", choices=sorted(df_predict["mold_code"].dropna().unique().astype(str))),
+                                            col_widths=[3,3,3,3]
+                                        )
+                                    )
+                                ),
+
+                                # === 냉각 단계 (n행 4열) ===
+                                ui.card(
+                                    ui.card_header("냉각 단계", style="background-color:#f8f9fa;"),
+                                    ui.card_body(
+                                        ui.layout_columns(
+                                            make_num_slider("upper_mold_temp1"),
+                                            make_num_slider("upper_mold_temp2"),
+                                            make_num_slider("upper_mold_temp3"),
+                                            make_num_slider("lower_mold_temp1"),
+                                            make_num_slider("lower_mold_temp2"),
+                                            make_num_slider("lower_mold_temp3"),
+                                            make_num_slider("Coolant_temperature"),
+                                            col_widths=[3,3,3,3]
+                                        )
+                                    )
+                                ),
+
+                                # === 공정 속도 관련 (n행 4열) ===
+                                ui.card(
+                                    ui.card_header("공정 속도 관련", style="background-color:#f8f9fa;"),
+                                    ui.card_body(
+                                        ui.layout_columns(
+                                            make_num_slider("facility_operation_cycleTime"),
+                                            make_num_slider("production_cycletime"),
+                                            col_widths=[6,6]
+                                        )
+                                    )
+                                ),
+
+                                # === 품질 및 성능 (n행 4열) ===
+                                ui.card(
+                                    ui.card_header("품질 및 성능", style="background-color:#f8f9fa;"),
+                                    ui.card_body(
+                                        ui.layout_columns(
+                                            make_num_slider("biscuit_thickness"),
+                                            make_num_slider("physical_strength"),
+                                            col_widths=[6,6]
+                                        )
+                                    )
                                 )
                             )
                         ),
+                        style="max-width: 1200px; margin: 0 auto;"
+                    ),
 
-                        # === 공정 상태 관련 (4열) ===
+                    ui.br(),
+
+                    # 예측 실행 + 결과 카드 (sticky)
+                    ui.div(
                         ui.card(
-                            ui.card_header("공정 상태 관련", style="background-color:#f8f9fa;"),
+                            ui.card_header(
+                                ui.div(
+                                    [
+                                        ui.input_action_button(
+                                            "predict_btn", "예측 실행",
+                                            class_="btn btn-primary btn-lg",
+                                            style="flex:1;"
+                                        ),
+                                        ui.input_action_button(
+                                            "reset_btn", ui.HTML('<i class="fa-solid fa-rotate-left"></i>'),
+                                            class_="btn btn-secondary btn-lg",
+                                            style="margin-left:10px; width:60px;"
+                                        )
+                                    ],
+                                    style="display:flex; align-items:center; width:100%;"
+                                ),
+                                style="text-align:center; background-color:#f8f9fa;"
+                            ),
                             ui.card_body(
-                                ui.layout_columns(
-                                    ui.input_numeric("count", "일조 누적 제품 개수", value=int(df_predict["count"].mean())),
-                                    ui.input_numeric("monthly_count", "월간 누적 제품 개수", value=int(df_predict["monthly_count"].mean())),
-                                    ui.input_numeric("global_count", "전체 누적 제품 개수", value=int(df_predict["global_count"].mean())),
-                                    ui.input_numeric("speed_ratio", "상하 구역 속도 비율", value=int(df_predict["speed_ratio"].mean())),
-                                    ui.input_numeric("pressure_speed_ratio", "주조 압력 속도 비율", value=int(df_predict["pressure_speed_ratio"].mean())),
-                                    make_select("working", "장비 가동 여부"),
-                                    make_select("emergency_stop", "비상 정지 여부"),
-                                    make_select("tryshot_signal", "측정 딜레이 여부"),
-                                    make_select("shift", "주, 야간 조"),
-                                    col_widths=[3,3,3,3]
-                                )
+                                ui.output_ui("prediction_result")
                             )
                         ),
+                        style="""
+                            position: -webkit-sticky;
+                            position: sticky;
+                            bottom: 1px;
+                            z-index: 1000;
+                            max-width: 1200px;
+                            margin: 0 auto;
+                        """
+                    ),
 
-                        # === 용융 단계 (n행 4열) ===
-                        ui.card(
-                            ui.card_header("용융 단계", style="background-color:#f8f9fa;"),
-                            ui.card_body(
-                                ui.layout_columns(
-                                    make_num_slider("molten_temp"),
-                                    make_select("heating_furnace", "용해로"),
-                                    col_widths=[6,6]
-                                )
-                            )
-                        ),
+                    ui.hr(),
 
-                        # === 충진 단계 (n행 4열) ===
-                        ui.card(
-                            ui.card_header("충진 단계", style="background-color:#f8f9fa;"),
-                            ui.card_body(
-                                ui.layout_columns(
-                                    make_num_slider("sleeve_temperature"),
-                                    make_num_slider("EMS_operation_time"),
-                                    make_num_slider("low_section_speed"),
-                                    make_num_slider("high_section_speed"),
-                                    make_num_slider("molten_volume"),
-                                    make_num_slider("cast_pressure"),
-                                    ui.input_select("mold_code", "금형 코드", choices=sorted(df_predict["mold_code"].dropna().unique().astype(str))),
-                                    col_widths=[3,3,3,3]
-                                )
-                            )
-                        ),
-
-                        # === 냉각 단계 (n행 4열) ===
-                        ui.card(
-                            ui.card_header("냉각 단계", style="background-color:#f8f9fa;"),
-                            ui.card_body(
-                                ui.layout_columns(
-                                    make_num_slider("upper_mold_temp1"),
-                                    make_num_slider("upper_mold_temp2"),
-                                    make_num_slider("upper_mold_temp3"),
-                                    make_num_slider("lower_mold_temp1"),
-                                    make_num_slider("lower_mold_temp2"),
-                                    make_num_slider("lower_mold_temp3"),
-                                    make_num_slider("Coolant_temperature"),
-                                    col_widths=[3,3,3,3]
-                                )
-                            )
-                        ),
-
-                        # === 공정 속도 관련 (n행 4열) ===
-                        ui.card(
-                            ui.card_header("공정 속도 관련", style="background-color:#f8f9fa;"),
-                            ui.card_body(
-                                ui.layout_columns(
-                                    make_num_slider("facility_operation_cycleTime"),
-                                    make_num_slider("production_cycletime"),
-                                    col_widths=[6,6]
-                                )
-                            )
-                        ),
-
-                        # === 품질 및 성능 (n행 4열) ===
-                        ui.card(
-                            ui.card_header("품질 및 성능", style="background-color:#f8f9fa;"),
-                            ui.card_body(
-                                ui.layout_columns(
-                                    make_num_slider("biscuit_thickness"),
-                                    make_num_slider("physical_strength"),
-                                    col_widths=[6,6]
-                                )
+                    # 분석 시각화 카드
+                    ui.card(
+                        ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
+                        ui.card_body(
+                            ui.navset_tab(
+                                ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
+                                ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
+                                ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot"))
                             )
                         )
                     )
+                                        ),
+                ui.nav_panel("개선",
                 ),
-                style="max-width: 1200px; margin: 0 auto;"
-            ),
-
-            ui.br(),
-
-            # 예측 실행 + 결과 카드 (sticky)
-            ui.div(
-                ui.card(
-                    ui.card_header(
-                        ui.div(
-                            [
-                                ui.input_action_button(
-                                    "predict_btn", "예측 실행",
-                                    class_="btn btn-primary btn-lg",
-                                    style="flex:1;"
-                                ),
-                                ui.input_action_button(
-                                    "reset_btn", ui.HTML('<i class="fa-solid fa-rotate-left"></i>'),
-                                    class_="btn btn-secondary btn-lg",
-                                    style="margin-left:10px; width:60px;"
-                                )
-                            ],
-                            style="display:flex; align-items:center; width:100%;"
-                        ),
-                        style="text-align:center; background-color:#f8f9fa;"
-                    ),
-                    ui.card_body(
-                        ui.output_ui("prediction_result")
-                    )
-                ),
-                style="""
-                    position: -webkit-sticky;
-                    position: sticky;
-                    bottom: 1px;
-                    z-index: 1000;
-                    max-width: 1200px;
-                    margin: 0 auto;
-                """
-            ),
-
-            ui.hr(),
-
-            # 분석 시각화 카드
-            ui.card(
-                ui.card_header("분석 시각화", style="background-color:#f8f9fa; text-align:center;"),
-                ui.card_body(
-                    ui.navset_tab(
-                        ui.nav_panel("변수 중요도", ui.output_plot("feature_importance_plot")),
-                        ui.nav_panel("분포 비교", ui.output_plot("distribution_plot")),
-                        ui.nav_panel("공정별 불량률", ui.output_plot("process_trend_plot"))
-                    )
-                )
             )
         ),
         id="main_nav",   # ⭐ 탭 컨트롤을 위한 id

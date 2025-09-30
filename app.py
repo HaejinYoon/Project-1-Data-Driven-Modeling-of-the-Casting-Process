@@ -46,7 +46,7 @@ drop_cols = [
 used_columns = df_predict.drop(columns=drop_cols).columns
 
 # 그룹 분류
-cat_cols = ["mold_code","working","emergency_stop","heating_furnace"]
+cat_cols = ["mold_code","working","emergency_stop","heating_furnace", "shift", "tryshot_signal"]
 num_cols = [c for c in used_columns if c not in cat_cols]
 
 # ===== 라벨 맵 =====

@@ -149,7 +149,13 @@ label_map = {
     "physical_strength": "제품 강도",
 
     # 평가
-    "passorfail": "합격/불합격"
+    "passorfail": "합격/불합격",
+
+    "global_count": "전체 누적 개수",
+    "monthly_count": "월간 누적 개수",
+    "speed_ratio": "상/하부 주입 속도 비율",
+	"pressure_speed_ratio": "주입 압력 비율 ",
+    "shift": "주/야간 교대",
 }
 
 

@@ -234,8 +234,8 @@ def make_svg(labels):
     return "\n".join(parts)
 
 svg_code = f"""
-<svg width="1000" height="500" xmlns="http://www.w3.org/2000/svg">
-  <image href="die-castings.gif" width="1000" height="500"/>
+<svg width="1000" height="500" xmlns="http://www.w3.org/2000/svg"
+     style="background:url('die-castings.gif'); background-size:cover;">
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L6,3 z" fill="red"/>
@@ -443,23 +443,43 @@ app_ui = ui.page_fluid(
                 ui.nav_panel(
                     "개요",
                         # -------------------- 상단 SVG + 버튼 --------------------
-                        ui.div(
-                            {"style": "position: relative; display:flex; justify-content:center;"},
-                            ui.HTML(svg_code),
-                            *[
-                                ui.input_action_button(
-                                    f"btn_{lbl['id']}", "",
-                                    style=f"""
-                                        position:absolute;
-                                        top:{lbl['y']}px; left:calc(50% - 500px + {lbl['x']}px);
-                                        width:{lbl['w']}px; height:{lbl['h']}px;
-                                        opacity:0; cursor:pointer;
-                                    """
-                                )
-                                for lbl in labels
-                            ]
-                        ),
+                        ui.layout_columns(
+                         # 1️⃣ 왼쪽 → SVG 그림
+                          ui.div(
+                           ui.HTML(svg_code),
+                           *[
+                           ui.input_action_button(
+                             f"btn_{lbl['id']}", "",
+                             style=f"""
+                             position:absolute;
+                             top:{lbl['y']}px; left:calc(50% - 500px + {lbl['x']}px);
+                             width:{lbl['w']}px; height:{lbl['h']}px;
+                             opacity:0; cursor:pointer;
+                             """
+                          )
+                         for lbl in labels
+                      ],
+                      style="position:relative; width:1000px; height:500px;"  
+                   ),
 
+                         # 2️⃣ 오른쪽 → 버튼 추가
+                         ui.div(
+                            [
+                               ui.input_action_button(
+                               "btn_process", "[주조 공정]",
+                                class_="btn btn-info",
+                                style="width:200px; margin:10px;"
+                               ),
+                               ui.input_action_button(
+                               "btn_steps", "[주조 공정 단계]",
+                                class_="btn btn-success",
+                                style="width:200px; margin:10px;"
+                               ),
+                             ],
+                             style="display:flex; flex-direction:column; align-items:flex-start; justify-content:center;"
+                          ),
+                          col_widths=[8, 4]
+                        ),
                         # -------------------- JS 코드 삽입 --------------------
                         ui.tags.script("""
                             Shiny.addCustomMessageHandler("switch_tab_with_label", function(msg) {
@@ -928,6 +948,48 @@ def server(input, output, session):
 
         # 예측 결과 초기화
         last_proba.set(None)
+    # [주조 공정] 버튼 클릭 → 팝업
+    @reactive.effect
+    @reactive.event(input.btn_process)   # 이름 맞춤
+    def _():
+        ui.modal_show(
+            ui.modal(
+                ui.markdown("""
+                ### 🏭 주조(Casting) 공정
+                주조(Casting)는 금속을 녹여 원하는 형상을 만드는 제조 공정입니다.  
+                고체 상태의 금속을 고온에서 녹여 액체 상태로 만든 뒤,  
+                미리 준비된 금형에 부어 응고시키면 제품 형태가 완성됩니다.  
+
+                **주요 목적**
+                - 금속을 원하는 형상과 치수로 성형  
+                - 기계적 강도와 품질 확보  
+                - 공정 효율 및 생산성 향상  
+                """),
+                title="주조 공정 설명",
+                easy_close=True,
+                footer=ui.modal_button("닫기")
+            )
+        )
+
+    # [주조 공정 단계] 버튼 클릭 → 팝업
+    @reactive.effect
+    @reactive.event(input.btn_steps)   # 이름 맞춤
+    def _():
+        ui.modal_show(
+            ui.modal(
+                ui.markdown("""
+                ### ⚙️ 주조 공정 단계
+                1. 용융 단계 (Melting)  
+                2. 충진 단계 (Filling)  
+                3. 냉각 단계 (Cooling)  
+                4. 공정 속도 및 장비 운전  
+                5. 품질 평가 (Inspection)  
+                """),
+                title="주조 공정 단계",
+                easy_close=True,
+                footer=ui.modal_button("닫기")
+            )
+        )
 
     @reactive.effect
     @reactive.event(input.predict_btn)

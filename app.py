@@ -1405,7 +1405,7 @@ def server(input, output, session):
               [matrix[1][0], matrix[1][1]]]   # 실제 정상 (FP, TN)
 
         fig, ax = plt.subplots(figsize=(4, 3))
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Oranges", cbar=False, ax=ax, color="tomato",
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Oranges", cbar=False, ax=ax,
                     xticklabels=["Pred: 불량", "Pred: 정상"],
                     yticklabels=["Actual: 불량", "Actual: 정상"])
         ax.set_title(title)

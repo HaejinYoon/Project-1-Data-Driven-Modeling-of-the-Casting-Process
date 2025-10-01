@@ -1229,9 +1229,61 @@ ui.nav_panel(
         # ============================
         ui.nav_panel(
             "모델 설명",
-            ui.card(
-                ui.card_header("최종 모델 설명"),
-                ui.HTML("<p>여기에 최종 선정된 모델 설명과 분석 근거를 추가할 수 있습니다.</p>")
+            ui.div(
+                [
+                    # 🔹 1. XGBoost 선택 이유 (상단 공통 카드)
+                    ui.card(
+                        ui.card_header("왜 XGBoost를 최종 모델로 선택했는가?"),
+                        ui.HTML("""
+                            <ul style="font-size:15px; line-height:1.8; text-align:left;">
+                                <li><b>불량 검출 (Recall) 최우선</b>: XGBoost Recall 97.8% (세 모델 중 최고)</li>
+                                <li><b>균형 잡힌 성능</b>: Recall 97.8% + F1 92.3% → 불량 검출력과 비용 최소화 동시 달성</li>
+                                <li><b>안정성과 재현성</b>: Trial 반복 실험에서도 상위권 유지 → 안정적, 신뢰성 확보</li>
+                                <li><b>경제적 효과</b>: Recall↑ → 재작업/폐기 비용 절감, Precision 유지 → 불필요 검사 비용 절감</li>
+                            </ul>
+                        """)
+                    ),
+        
+                    ui.br(),
+        
+                    # 🔹 2. Feature Importance & SHAP 그래프 (좌우 배치)
+                    ui.layout_columns(
+                    
+                        # 왼쪽: Feature Importance
+                        ui.card(
+                            ui.card_header("Feature Importance (중요 변수 Top)"),
+                            ui.tags.img(
+                                src="feature_importance.png",   # www 폴더 안에 넣어두기
+                                style="width:100%; height:auto; border-radius:6px; margin-bottom:10px;"
+                            ),
+                            ui.HTML("""
+                                <p style="font-size:14px; text-align:left; line-height:1.6; margin:10px;">
+                                    - 월간 생산 횟수, 슬리브 온도, 금형 온도 변수가 가장 큰 영향을 미침<br>
+                                    - 불량 판정의 주요 기준이 <b>온도·횟수·압력</b>임을 데이터가 보여줌<br>
+                                    - 현장에서 <b>관리 우선순위 변수</b>를 직관적으로 확인 가능
+                                </p>
+                            """)
+                        ),
+        
+                        # 오른쪽: SHAP Summary Plot
+                        ui.card(
+                            ui.card_header("SHAP Summary Plot (변수 영향 방향성)"),
+                            ui.tags.img(
+                                src="shap_summary.png",   # www 폴더 안에 넣어두기
+                                style="width:100%; height:auto; border-radius:6px; margin-bottom:10px;"
+                            ),
+                            ui.HTML("""
+                                <p style="font-size:14px; text-align:left; line-height:1.6; margin:10px;">
+                                    - <b>압력/속도 비율↑</b> → 불량 ↑ (과도한 압력/속도 불균형 문제)<br>
+                                    - <b>생산 횟수↑</b> → 불량 ↓ (안정화 효과)<br>
+                                    - 데이터 기반으로 <b>공정 조정 포인트</b> 제시 → 개선방안 수립에 활용
+                                </p>
+                            """)
+                        ),
+        
+                        col_widths=[6,6]
+                    )
+                ]
             )
         )
     )
@@ -1380,18 +1432,18 @@ def server(input, output, session):
         "Model": ["XGBoost", "LightGBM", "RandomForest"],
         "BestScore": [0.9627, 0.9592, 0.9543]
     })
-    
+
     @output
     @render.plot
     def best_score_plot():
         fig, ax = plt.subplots(figsize=(6,4))
         sns.barplot(data=df_scores, x="Model", y="BestScore", palette="Blues_r", ax=ax)
-    
+
         # 점수 표시
         for i, row in df_scores.iterrows():
             ax.text(i, row["BestScore"] + 0.0003, f"{row['BestScore']:.4f}", 
                     ha="center", fontsize=10)
-    
+
         ax.set_title("Model Best Score Ranking (ACC 0.1, Recall 0.6, F1 0.3)", fontsize=12)
         ax.set_ylabel("Best Score")
         ax.set_ylim(0.953, 0.964)

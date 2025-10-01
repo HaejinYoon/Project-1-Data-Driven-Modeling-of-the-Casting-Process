@@ -20,6 +20,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from scipy import stats
 
+
 matplotlib.use("Agg")   # Tkinter 대신 Agg backend 사용 (GUI 필요 없음)
 
 app_dir = pathlib.Path(__file__).parent

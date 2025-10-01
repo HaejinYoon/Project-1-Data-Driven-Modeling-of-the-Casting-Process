@@ -593,27 +593,27 @@ app_ui = ui.page_fluid(
                                 output_widget("timeseries_plot")
                         ),
                     ),
-                    ui.layout_columns(
-                        # 1행
-                        ui.card(
-                            ui.card_header("데이터 요약"),
-                            ui.output_table("df_summary"),
-                        ),
-                        ui.card(
-                            ui.card_header("컬럼별 결측치 비율"),
-                            ui.output_plot("missing_plot"),
-                        ),
-                        # 2행
-                        ui.card(
-                            ui.card_header("변수 타입 분포"),
-                            ui.output_plot("dtype_pie"),
-                        ),
-                        ui.card(
-                            ui.card_header("수치형 변수 상관관계"),
-                            ui.output_plot("corr_heatmap_overview"),
-                        ),
-                        col_widths=[6, 6],  # 2열 레이아웃
-                    ),
+                    # ui.layout_columns(
+                        # # 1행
+                        # ui.card(
+                        #     ui.card_header("데이터 요약"),
+                        #     ui.output_table("df_summary"),
+                        # ),
+                        # ui.card(
+                        #     ui.card_header("컬럼별 결측치 비율"),
+                        #     ui.output_plot("missing_plot"),
+                        # ),
+                        # # 2행
+                        # ui.card(
+                        #     ui.card_header("변수 타입 분포"),
+                        #     ui.output_plot("dtype_pie"),
+                        # ),
+                        # ui.card(
+                        #     ui.card_header("수치형 변수 상관관계"),
+                        #     ui.output_plot("corr_heatmap_overview"),
+                        # ),
+                        # col_widths=[6, 6],  # 2열 레이아웃
+                    # ),
                 )
             )
         ),
@@ -1057,79 +1057,79 @@ def server(input, output, session):
             plt.figure()
             plt.text(0.5,0.5,"공정별 그래프 생성 불가",ha="center",va="center")
 
-    # ===== 데이터 요약 카드 =====
-    @output
-    @render.table
-    def df_summary():
-        return pd.DataFrame({
-            "항목": ["행 개수", "열 개수", "총 결측치", "결측치 비율(%)",
-                "수치형 변수 개수", "범주형 변수 개수"],
-            "값": [
-                f"{df_raw.shape[0]:,}",
-                f"{df_raw.shape[1]:,}",
-                f"{df_raw.isna().sum().sum():,}",
-                round(df_raw.isna().sum().sum() / (df_raw.shape[0]*df_raw.shape[1]) * 100, 2),
-                df_raw.select_dtypes(include="number").shape[1],
-                df_raw.select_dtypes(exclude="number").shape[1],
-            ]
-        })
+    # # ===== 데이터 요약 카드 =====
+    # @output
+    # @render.table
+    # def df_summary():
+    #     return pd.DataFrame({
+    #         "항목": ["행 개수", "열 개수", "총 결측치", "결측치 비율(%)",
+    #             "수치형 변수 개수", "범주형 변수 개수"],
+    #         "값": [
+    #             f"{df_raw.shape[0]:,}",
+    #             f"{df_raw.shape[1]:,}",
+    #             f"{df_raw.isna().sum().sum():,}",
+    #             round(df_raw.isna().sum().sum() / (df_raw.shape[0]*df_raw.shape[1]) * 100, 2),
+    #             df_raw.select_dtypes(include="number").shape[1],
+    #             df_raw.select_dtypes(exclude="number").shape[1],
+    #         ]
+    #     })
 
-    # --- 결측치 비율 ---
-    @output
-    @render.plot
-    def missing_plot():
-        # 결측치 비율 계산
-        na_ratio = (df_explore.isna().mean() * 100)
-        na_ratio = na_ratio[na_ratio > 0].sort_values(ascending=False).head(6)  # 상위 6개만
+    # # --- 결측치 비율 ---
+    # @output
+    # @render.plot
+    # def missing_plot():
+    #     # 결측치 비율 계산
+    #     na_ratio = (df_explore.isna().mean() * 100)
+    #     na_ratio = na_ratio[na_ratio > 0].sort_values(ascending=False).head(6)  # 상위 6개만
 
-        if na_ratio.empty:
-            fig, ax = plt.subplots()
-            ax.text(0.5, 0.5, "결측치가 있는 컬럼이 없습니다.", ha="center", va="center")
-            ax.axis("off")
-            return fig
+    #     if na_ratio.empty:
+    #         fig, ax = plt.subplots()
+    #         ax.text(0.5, 0.5, "결측치가 있는 컬럼이 없습니다.", ha="center", va="center")
+    #         ax.axis("off")
+    #         return fig
 
-        fig, ax = plt.subplots(figsize=(6, 3))
-        sns.barplot(x=na_ratio.index, y=na_ratio.values, ax=ax, color="tomato")
+    #     fig, ax = plt.subplots(figsize=(6, 3))
+    #     sns.barplot(x=na_ratio.index, y=na_ratio.values, ax=ax, color="tomato")
 
-        # 막대 위에 라벨 표시
-        for i, v in enumerate(na_ratio.values):
-            ax.text(i, v + 0.5, f"{v:.1f}%", ha="center", va="bottom", fontsize=9)
+    #     # 막대 위에 라벨 표시
+    #     for i, v in enumerate(na_ratio.values):
+    #         ax.text(i, v + 0.5, f"{v:.1f}%", ha="center", va="bottom", fontsize=9)
 
-        ax.set_ylabel("결측치 비율 (%)")
-        ax.set_xlabel("컬럼명")
-        ax.set_title("결측치 비율 상위 6개 컬럼")
-        ax.tick_params(axis="x", rotation=45)
-        ax.set_ylim(0, max(na_ratio.values) * 1.2)  # 여백 확보
+    #     ax.set_ylabel("결측치 비율 (%)")
+    #     ax.set_xlabel("컬럼명")
+    #     ax.set_title("결측치 비율 상위 6개 컬럼")
+    #     ax.tick_params(axis="x", rotation=45)
+    #     ax.set_ylim(0, max(na_ratio.values) * 1.2)  # 여백 확보
 
-        return fig
+    #     return fig
 
     # --- 변수 타입 분포 ---
-    @output
-    @render.plot
-    def dtype_pie():
-        num = df_explore.select_dtypes(include="number").shape[1]
-        cat = df_explore.select_dtypes(exclude="number").shape[1]
-        fig, ax = plt.subplots()
-        ax.pie([num, cat], labels=["수치형", "범주형"], autopct="%1.1f%%", colors=["skyblue", "orange"])
-        ax.set_title("변수 타입 비율")
-        return fig
+    # @output
+    # @render.plot
+    # def dtype_pie():
+    #     num = df_explore.select_dtypes(include="number").shape[1]
+    #     cat = df_explore.select_dtypes(exclude="number").shape[1]
+    #     fig, ax = plt.subplots()
+    #     ax.pie([num, cat], labels=["수치형", "범주형"], autopct="%1.1f%%", colors=["skyblue", "orange"])
+    #     ax.set_title("변수 타입 비율")
+    #     return fig
 
-    # --- 수치형 변수 상관 관계 히트맵 ---
-    @output
-    @render.plot
-    def corr_heatmap_overview():
-        num_df = df_explore.select_dtypes(include="number")
-        if num_df.shape[1] < 2:
-            fig, ax = plt.subplots()
-            ax.text(0.5, 0.5, "수치형 변수가 부족합니다.", ha="center", va="center")
-            ax.axis("off")
-            return fig
+    # # --- 수치형 변수 상관 관계 히트맵 ---
+    # @output
+    # @render.plot
+    # def corr_heatmap_overview():
+    #     num_df = df_explore.select_dtypes(include="number")
+    #     if num_df.shape[1] < 2:
+    #         fig, ax = plt.subplots()
+    #         ax.text(0.5, 0.5, "수치형 변수가 부족합니다.", ha="center", va="center")
+    #         ax.axis("off")
+    #         return fig
 
-        corr = num_df.corr(numeric_only=True)
-        fig, ax = plt.subplots(figsize=(5, 4))
-        sns.heatmap(corr, cmap="coolwarm", center=0, ax=ax, cbar=True)
-        ax.set_title("수치형 변수 상관관계 히트맵")
-        return fig
+    #     corr = num_df.corr(numeric_only=True)
+    #     fig, ax = plt.subplots(figsize=(5, 4))
+    #     sns.heatmap(corr, cmap="coolwarm", center=0, ax=ax, cbar=True)
+    #     ax.set_title("수치형 변수 상관관계 히트맵")
+    #     return fig
 
     # --- 동적 필터 UI ---
     @output

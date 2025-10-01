@@ -80,9 +80,22 @@ df_predict = df_predict[
 ]
 
 # 탐색 탭용 (필터링/EDA)
-drop_cols_explore = ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]
+drop_cols_explore = ["id","line","name","mold_name","date","time", "registration_time"]
 df_explore = df_raw.drop(columns=drop_cols_explore, errors="ignore")  # ← 안전하게
 # mold_code는 남김
+
+
+# 전처리 후 데이터 (모델 학습용)
+df_processed = pd.read_csv("./data/processed_train.csv")
+
+# 컬럼 이름 표준화
+df_processed.columns = df_processed.columns.str.strip().str.lower()
+# 원본 탐색 데이터도 동일하게
+df_explore.columns = df_explore.columns.str.strip().str.lower()
+
+# 혹시 passorfail이 인덱스로 들어갔다면 컬럼으로 리셋
+if "passorfail" not in df_processed.columns and "passorfail" in df_processed.index.names:
+    df_processed = df_processed.reset_index()
 
 
 # ✅ 파생 변수 자동 추가
@@ -131,7 +144,7 @@ label_map = {
 
     # 충진 단계
     "sleeve_temperature": "주입 관 온도",
-    "EMS_operation_time": "전자 교반(EMS) 가동 시간",
+    "ems_operation_time": "전자 교반(EMS) 가동 시간",
     "low_section_speed": "하위 구간 주입 속도",
     "high_section_speed": "상위 구간 주입 속도",
     "mold_code": "금형 코드",
@@ -145,10 +158,10 @@ label_map = {
     "lower_mold_temp1": "하부1 금형 온도",
     "lower_mold_temp2": "하부2 금형 온도",
     "lower_mold_temp3": "하부3 금형 온도",
-    "Coolant_temperature": "냉각수 온도",
+    "coolant_temperature": "냉각수 온도",
 
     # 공정 속도 관련
-    "facility_operation_cycleTime": "장비 전체 사이클 시간",
+    "facility_operation_cycletime": "장비 전체 사이클 시간",
     "production_cycletime": "실제 생산 사이클 시간",
 
     # 품질 및 성능
@@ -694,7 +707,40 @@ app_ui = ui.page_fluid(
                             ui.card_header("시계열 데이터"),
                                 output_widget("timeseries_plot")
                         ),
-                    ),  
+                    ),
+                    
+                    # 2️⃣ 새로운 Boxplot 비교 카드 (독립적)
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            ui.div(
+                                "Boxplot 비교 필터",
+                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                            ),
+                            ui.input_select(
+                                "box_var", "원본 변수 선택",
+                                choices=["없음"] + [get_label(c) for c in df_explore.columns 
+                                                   if c not in ["id","line","name","mold_name","date","time","registration_time","passorfail",
+                                                                "speed_ratio","pressure_speed_ratio"]],
+                                selected="없음"
+                            ),
+                            ui.input_select(
+                                "box_var_derived", "파생 변수 선택",
+                                choices=["없음"] + [get_label(c) for c in ["speed_ratio","pressure_speed_ratio"] if c in df_explore.columns],
+                                selected="없음"
+                            ),
+                        ),
+                        ui.layout_columns(
+                            ui.card(
+                                ui.card_header("원본 Boxplot"),
+                                ui.output_plot("boxplot_raw")   # ✅ 변경
+                            ),
+                            ui.card(
+                                ui.card_header("전처리 Boxplot"),
+                                ui.output_plot("boxplot_proc")  # ✅ 변경
+                            ),
+                            col_widths=[6, 6]
+                        ),
+                    ),
                     # ui.layout_columns(
                         # # 1행
                         # ui.card(
@@ -1659,6 +1705,20 @@ def server(input, output, session):
             ax.axis("off")
             return fig
 
+    # Boxplot 원본 선택 시 → 파생 자동 없음
+    @reactive.Effect
+    @reactive.event(input.box_var)
+    def _():
+        if input.box_var() != "없음":
+            update_select("box_var_derived", selected="없음")
+
+    # Boxplot 파생 선택 시 → 원본 자동 없음
+    @reactive.Effect
+    @reactive.event(input.box_var_derived)
+    def _():
+        if input.box_var_derived() != "없음":
+            update_select("box_var", selected="없음")
+
     @output
     @render_plotly
     def timeseries_plot():
@@ -1722,6 +1782,80 @@ def server(input, output, session):
                 var: label_map.get(var, var)
             },
         )
+
+        # =========================
+        # 📦 Boxplot 비교 (원본 vs 전처리)
+        # =========================
+        # 원본 Boxplot (Matplotlib)
+        @output
+        @render.plot
+        def boxplot_raw():
+            var = None
+            if input.box_var() != "없음":
+                inv_map = {v: k for k, v in label_map.items()}
+                var = inv_map.get(input.box_var(), input.box_var()).lower()
+            elif input.box_var_derived() != "없음":
+                derived_map = {
+                    "상/하부 주입 속도 비율": "speed_ratio",
+                    "주입 압력 비율": "pressure_speed_ratio",
+                }
+                var = derived_map.get(input.box_var_derived(), input.box_var_derived())
+        
+            if var is None or var not in df_explore.columns:
+                fig, ax = plt.subplots()
+                ax.text(0.5,0.5,"⚠️ 변수 선택 필요",ha="center",va="center")
+                ax.axis("off")
+                return fig
+        
+            dff = df_explore[[var, "passorfail"]].dropna().copy()
+            if dff.empty:
+                fig, ax = plt.subplots()
+                ax.text(0.5,0.5,"⚠️ 원본 데이터 없음",ha="center",va="center")
+                ax.axis("off")
+                return fig
+        
+            dff["불량여부"] = dff["passorfail"].map({0:"Pass",1:"Fail"})
+        
+            fig, ax = plt.subplots(figsize=(6,4))
+            sns.boxplot(x="불량여부", y=var, data=dff, hue="불량여부", palette={"Pass":"green","Fail":"red"}, ax=ax)
+            ax.set_title(f"{label_map.get(var, var)} - 원본 Boxplot")
+            return fig
+        
+        
+        # 전처리 Boxplot (Matplotlib)
+        @output
+        @render.plot
+        def boxplot_proc():
+            var = None
+            if input.box_var() != "없음":
+                inv_map = {v: k for k, v in label_map.items()}
+                var = inv_map.get(input.box_var(), input.box_var()).lower()
+            elif input.box_var_derived() != "없음":
+                derived_map = {
+                    "상/하부 주입 속도 비율": "speed_ratio",
+                    "주입 압력 비율": "pressure_speed_ratio",
+                }
+                var = derived_map.get(input.box_var_derived(), input.box_var_derived())
+        
+            if var is None or var not in df_processed.columns:
+                fig, ax = plt.subplots()
+                ax.text(0.5,0.5,"⚠️ 변수 선택 필요",ha="center",va="center")
+                ax.axis("off")
+                return fig
+        
+            dff = df_processed[[var, "passorfail"]].dropna().copy()
+            if dff.empty:
+                fig, ax = plt.subplots()
+                ax.text(0.5,0.5,"⚠️ 전처리 데이터 없음",ha="center",va="center")
+                ax.axis("off")
+                return fig
+        
+            dff["불량여부"] = dff["passorfail"].map({0:"Pass",1:"Fail"})
+        
+            fig, ax = plt.subplots(figsize=(6,4))
+            sns.boxplot(x="불량여부", y=var, data=dff, hue="불량여부", palette={"Pass":"green","Fail":"red"}, ax=ax)
+            ax.set_title(f"{label_map.get(var, var)} - 전처리 Boxplot")
+            return fig
 
 
 

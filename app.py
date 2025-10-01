@@ -91,9 +91,6 @@ for col in derived_cols:
     if col in df_predict.columns:
         df_explore[col] = df_predict[col]
 
-print("df_predict 컬럼:", df_predict.columns.tolist())
-print("df_explore 컬럼:", df_explore.columns.tolist())
-
 # 예측에서 제외할 컬럼
 drop_cols = [
     "real_time",   # registration_time → real_time

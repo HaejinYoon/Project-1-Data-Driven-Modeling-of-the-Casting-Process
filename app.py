@@ -364,13 +364,13 @@ app_ui = ui.page_fluid(
             """),
             ui.layout_columns(
 
-                # 1️⃣ 데이터 탐색 (파스텔 노랑)
+                # 데이터 탐색
                 ui.card(
-                    {"class": "overview-card", "style": "border: 2px solid #FFE082; color: #F9A825;"},
+                    {"class": "overview-card", "style": "border: 2px solid #FFC966; color: #FFC966;"},
                     ui.card_header(
                         "데이터 탐색",
                         style=(
-                            "background-color: #FFE082; color: #333; "
+                            "background-color: #FFC966; color: #333; "
                             "font-weight:bold; font-size:20px; text-align:center; "
                             "padding-top:15px; padding-bottom:15px;"
                         )
@@ -390,13 +390,13 @@ app_ui = ui.page_fluid(
                     ui.tags.p("[바로가기]", class_="card-link-text")
                 ),
 
-                # 2️⃣ 예측 (파스텔 연두)
+                # 예측
                 ui.card(
-                    {"class": "overview-card", "style": "border: 2px solid #C8E6C9; color: #388E3C;"},
+                    {"class": "overview-card", "style": "border: 2px solid #A5C16A; color: #A5C16A;"},
                     ui.card_header(
                         "예측",
                         style=(
-                            "background-color: #C8E6C9; color: #333; "
+                            "background-color: #A5C16A; color: #333; "
                             "font-weight:bold; font-size:20px; text-align:center; "
                             "padding-top:15px; padding-bottom:15px;"
                         )
@@ -416,13 +416,13 @@ app_ui = ui.page_fluid(
                     ui.tags.p("[바로가기]", class_="card-link-text")
                 ),
 
-                # 3️⃣ 모델링 (파스텔 하늘색)
+                # 모델링
                 ui.card(
-                    {"class": "overview-card", "style": "border: 2px solid #B3E5FC; color: #0277BD;"},
+                    {"class": "overview-card", "style": "border: 2px solid #80CBC4; color: #80CBC4;"},
                     ui.card_header(
                         "모델링",
                         style=(
-                            "background-color: #B3E5FC; color: #333; "
+                            "background-color: #80CBC4; color: #333; "
                             "font-weight:bold; font-size:20px; text-align:center; "
                             "padding-top:15px; padding-bottom:15px;"
                         )
@@ -470,24 +470,35 @@ app_ui = ui.page_fluid(
                       style="position:relative; width:1000px; height:500px;"  
                    ),
 
-                         # 2️⃣ 오른쪽 → 버튼 추가
-                         ui.div(
+                        #  # 2️⃣ 오른쪽 → 버튼 추가
+                        ui.div(
                             [
-                               ui.input_action_button(
-                               "btn_process", "[주조 공정]",
-                                class_="btn btn-info",
-                                style="width:200px; margin:10px;"
-                               ),
-                               ui.input_action_button(
-                               "btn_steps", "[주조 공정 단계]",
-                                class_="btn btn-success",
-                                style="width:200px; margin:10px;"
-                               ),
-                             ],
-                             style="display:flex; flex-direction:column; align-items:flex-start; justify-content:center;"
-                          ),
-                          col_widths=[8, 4]
+                                ui.input_action_button(
+                                    "btn_process", "[주조 공정]",
+                                    style="""
+                                        width:200px; margin:10px;
+                                        background-color:#A5C16A;
+                                        color:white; font-weight:bold; border:none;
+                                        border-radius:8px;
+                                    """
+                                ),
+                                ui.input_action_button(
+                                    "btn_steps", "[주조 공정 단계]",
+                                    style="""
+                                        width:200px; margin:10px;
+                                        background-color:#FFC966;
+                                        color:white; font-weight:bold; border:none;
+                                        border-radius:8px;
+                                    """
+                                ),
+                            ],
+                            style="display:flex; flex-direction:column; align-items:flex-start; justify-content:center;"
                         ),
+                        col_widths=[8, 4]
+                        ),
+
+
+                        
                         # -------------------- JS 코드 삽입 --------------------
                         ui.tags.script("""
                             Shiny.addCustomMessageHandler("switch_tab_with_label", function(msg) {
@@ -511,19 +522,14 @@ app_ui = ui.page_fluid(
                                     background:#fafafa;
                                 """
                             },
+                            ui.tags.div(
                             ui.markdown("""
+                            공정 단계별 데이터를 활용하여, 주조 조건(온도, 속도, 금형, 가열로 등)이 최종 양품/불량(passorfail)에 어떤 영향을 주는지 탐색할 수 있습니다.  
+                            이를 통해 주조 공정의 주요 인자들을 이해하고, **품질 개선 및 불량 감소**에 기여할 수 있는 근거를 마련할 수 있습니다.
+                            """),
+                            style="line-height:1.8; font-size:16px; text-align:center; margin:5px 0;"
+                            )
 
-                                
-                                ---
-
-                                ### [요약]
-
-                                본 데이터 분석에서는 위와 같은 공정 단계별 데이터를 활용하여, 주조 조건(온도, 속도, 금형, 가열로 등)이 최종 양품/불량(passorfail)에
-                                어떤 영향을 주는지 탐색하고 시각화하였습니다.
-                                이를 통해 주조 공정의 주요 인자들을 이해하고, 품질 개선 및 불량 감소에 기여할 수 있는 근거를 마련할 수 있습니다.
-
-
-                                """)
                             )    
                 ),
                 ui.nav_panel("EDA",
@@ -918,23 +924,31 @@ def server(input, output, session):
         ui.modal_show(
             ui.modal(
                 ui.markdown("""
-                ### 🏭 주조(Casting) 공정
-                주조(Casting)는 금속을 녹여 원하는 형상을 만드는 제조 공정입니다. 
-                고체 상태의 금속을 고온에서 녹여 액체 상태로 만든 뒤, 미리 준비된 금형에 부어 응고시키면 제품 형태가 완성됩니다.
-                주조 공정은 복잡한 형상, 대량 생산, 재료 절감이 가능하여 자동차, 기계 부품 등 다양한 산업 분야에서 널리 활용됩니다.
+                **주조(Casting) 공정**  
 
-                **주요 목적**
+                주조(Casting)는 금속을 녹여 원하는 형상을 만드는 제조 공정입니다.  
+                고체 상태의 금속을 고온에서 녹여 액체 상태로 만든 뒤, 미리 준비된 금형에 부어 응고시키면 제품 형태가 완성됩니다.  
+
+                주조 공정은 복잡한 형상, 대량 생산, 재료 절감이 가능하여 자동차, 기계 부품 등 다양한 산업 분야에서 널리 활용됩니다.  
+
+                ---
+
+                **주요 목적**  
                 - 금속을 원하는 형상과 치수로 성형  
                 - 기계적 강도와 품질 확보  
                 - 공정 효율 및 생산성 향상  
+
+                ---
+
+                **다이캐스팅 공정 (Die Casting)**  
                 
-                ### [다이캐스팅 공정]
-                다이캐스팅(Die Casting)은 고압을 이용해 용융 금속을 금형 내로 빠르게 주입하여 복잡한 형상을 가진 금속 부품을 고속으로 생산하는 공정입니다.
-                정밀한 치수, 매끄러운 표면, 높은 생산성을 달성할 수 있는 것이 특징입니다.
+                다이캐스팅은 고압을 이용해 용융 금속을 금형 내로 빠르게 주입하여, 복잡한 형상을 가진 금속 부품을 고속으로 생산하는 공정입니다.  
+                정밀한 치수, 매끄러운 표면, 높은 생산성을 달성할 수 있는 것이 특징입니다.  
                 """),
                 title="주조 공정 설명",
                 easy_close=True,
-                footer=ui.modal_button("닫기")
+                footer=ui.modal_button("닫기"),
+                size="xl"
             )
         )
 
@@ -942,37 +956,50 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_steps)   # 이름 맞춤
     def _():
+        # ui.modal_show(
         ui.modal_show(
             ui.modal(
                 ui.markdown("""
-                ### ⚙️ 주조 공정 단계
-                1. 용융 단계 (Melting)
-                금속을 고온에서 녹이는 과정입니다.
-                용해로를 통해 일정 온도로 금속을 유지하며, 주입 가능한 액체 상태를 만듭니다.
+                **1. 용융 단계 (Melting)**  
+
+                금속을 고온에서 녹이는 과정입니다.  
+                용해로를 통해 일정 온도로 금속을 유지하며, 주입 가능한 액체 상태를 만듭니다.  
                 이 단계에서 금속의 균질성과 온도 관리가 매우 중요합니다.  
-                
-                2. 충진 단계 (Filling)  
-                녹인 금속을 금형 내부로 주입하는 단계입니다.
-                주입 속도, 주입 압력, 금형 설계에 따라 내부 충진 상태가 달라지고, 제품 내부 결함(공극, 불균질 등)에 영향을 줍니다.
-                일부 공정에서는 전자 교반(EMS)을 통해 금속 혼합을 개선하기도 합니다.
-                
-                3. 냉각 단계 (Cooling)
-                주입된 금속이 금형 내에서 응고되는 단계입니다.
-                금속의 냉각 속도와 금형 온도를 적절히 제어해야 수축, 변형, 내부 응력 등을 최소화할 수 있습니다.
+
+                ---
+
+                **2. 충진 단계 (Filling)**  
+
+                녹인 금속을 금형 내부로 주입하는 단계입니다.  
+                주입 속도, 주입 압력, 금형 설계에 따라 내부 충진 상태가 달라지고, 제품 내부 결함(공극, 불균질 등)에 영향을 줍니다.  
+                일부 공정에서는 전자 교반(EMS)을 통해 금속 혼합을 개선하기도 합니다.  
+
+                ---
+
+                **3. 냉각 단계 (Cooling)**  
+
+                주입된 금속이 금형 내에서 응고되는 단계입니다.  
+                금속의 냉각 속도와 금형 온도를 적절히 제어해야 수축, 변형, 내부 응력 등을 최소화할 수 있습니다.  
                 냉각수와 금형 온도 관리가 주요 역할을 합니다.  
+
+                ---
+
+                **4. 공정 속도 및 장비 운전**  
                 
-                4. 공정 속도 및 장비 운전  
-                장비 사이클 시간과 실제 생산 속도는 공정 효율과 품질 안정성에 직결됩니다.
-                장비 가동 상태, 비상 정지 여부 등을 관리하며 생산 계획에 따라 운용됩니다.
+                장비 사이클 시간과 실제 생산 속도는 공정 효율과 품질 안정성에 직결됩니다.  
+                장비 가동 상태, 비상 정지 여부 등을 관리하며 생산 계획에 따라 운용됩니다.  
+
+                ---
+
+                **5. 품질 평가 (Inspection)**  
                 
-                5. 품질 평가 (Inspection)  
-                최종 주조물은 두께, 강도 등 물리적 특성을 평가합니다.
-                합격/불합격(pass/fail) 여부를 결정하며, 이를 기반으로 공정 최적화와 품질 개선을 수행합니다.
-                
+                최종 주조물은 두께, 강도 등 물리적 특성을 평가합니다.  
+                합격/불합격(pass/fail) 여부를 결정하며, 이를 기반으로 공정 최적화와 품질 개선을 수행합니다.  
                 """),
                 title="주조 공정 단계",
                 easy_close=True,
-                footer=ui.modal_button("닫기")
+                footer=ui.modal_button("닫기"),
+                size="xl"
             )
         )
     @reactive.effect
@@ -1464,10 +1491,13 @@ def server(input, output, session):
             },
         )
 
-        # === 수치형일 때만 스무딩 추가 ===
+
+
+        # # === 수치형일 때만 스무딩 추가 ===
         if pd.api.types.is_numeric_dtype(dff[var]):
             def smooth_series(series, window=20):
-                return series.rolling(window=window, center=True, min_periods=1).mean()
+                # 이전 시점 기준 rolling mean
+                return series.rolling(window=window, center=False, min_periods=1).mean()
 
             dff["smoothed"] = smooth_series(dff[var], window=20)
 
@@ -1478,6 +1508,8 @@ def server(input, output, session):
                 name=f"{label_map.get(var, var)} (Smoothed)",
                 line=dict(color="blue", width=2)
             )
+
+
 
         # 공통 레이아웃
         fig.update_layout(

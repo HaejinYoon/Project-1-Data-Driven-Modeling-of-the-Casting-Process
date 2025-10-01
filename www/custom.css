@@ -182,49 +182,63 @@ footer {
     padding: 15px;
 }
 
-/* ======================
-   슬라이더 (range input)
-   ====================== */
-   /* 슬라이더 전체 바탕 라인 */
-   .irs--shiny .irs-line {
-       background: linear-gradient(90deg, #ffe0cc, #ffe066, #f7a072, #f25f5c, #9c6644) !important;
-       border-radius: 6px;
-       height: 2px;
-       opacity: 0.9;
-   }
 
-   /* 선택된 영역 (드래그된 부분) */
-   .irs--shiny .irs-bar {
-       background: #f76c22 !important;
-       /* 파스텔 오렌지 */
-       height: 8px;
-       border-radius: 6px;
-   }
+/* 슬라이더 전체 바탕 라인 */
+.irs--shiny .irs-line {
+    background: linear-gradient(90deg, #ffe0cc, #ffe066, #f7a072, #f25f5c, #9c6644) !important;
+    border-radius: 6px;
+    height: 2px;
+    opacity: 0.9;
+}
 
-   /* 손잡이 (handle) */
-   .irs--shiny .irs-handle {
-       background: #f25f5c !important;
-       border: none;
-       border-radius: 50%;
-       width: 18px;
-       height: 18px;
-       top: 22px;
-       /* 위치는 브라우저마다 조정 필요 */
-       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-       cursor: pointer;
-       transition: background 0.3s;
-   }
+/* 선택된 영역 (드래그된 부분) */
+.irs--shiny .irs-bar {
+    background: #f76c22 !important;
+    /* 파스텔 오렌지 */
+    height: 8px;
+    border-radius: 6px;
+}
 
-   .irs--shiny .irs-handle:hover {
-       background: #9c6644 !important;
-       /* hover 시 브라운 */
-   }
+/* 손잡이 (handle) */
+.irs--shiny .irs-handle {
+    background: #f25f5c !important;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    top: 22px;
+    /* 위치는 브라우저마다 조정 필요 */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: background 0.3s;
+}
 
-   /* 값 표시 (bubble) */
-   .irs--shiny .irs-single {
-       background: #9c6644 !important;
-       color: #fff;
-       border-radius: 6px;
-       padding: 2px 6px;
-       font-weight: bold;
-   }
+.irs--shiny .irs-handle:hover {
+    background: #9c6644 !important;
+    /* hover 시 브라운 */
+}
+
+/* 값 표시 (bubble) */
+.irs--shiny .irs-single {
+    background: #9c6644 !important;
+    color: #fff;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-weight: bold;
+}
+
+.card-body .shiny-data-grid {
+    width: 100% !important;
+    /* 카드 너비를 따라가도록 */
+    overflow-x: auto;
+    /* 내용이 넘치면 스크롤 */
+    margin: 0!important;
+}
+
+.card-body .shiny-data-grid table {
+    width: 100% !important;
+    /* 표 자체도 꽉 채우기 */
+    table-layout: auto;
+    margin: 0!important;
+    /* 셀 너비 자동 */
+}

@@ -359,6 +359,30 @@ for code, df in train.groupby("mold_code"):
 setting_df = pd.DataFrame(setting_table).T.reset_index().rename(columns={"index": "mold_code"})
 setting_df["mold_code"] = setting_df["mold_code"].astype(str)  # 문자열로 통일
 
+# ================================
+# 생산 시뮬레이션 탭 비율 그래프
+# ================================
+train_raw = pd.read_csv("./data/train_raw.csv")
+
+if "date" in train_raw.columns and "time" in train_raw.columns:
+    train_raw["real_time"] = pd.to_datetime(
+        train_raw["date"].astype(str) + " " + train_raw["time"].astype(str),
+        errors="coerce"
+    )
+elif "registration_time" in train_raw.columns:
+    train_raw["real_time"] = pd.to_datetime(train_raw["registration_time"], errors="coerce")
+else:
+    raise ValueError("date/time 또는 registration_time 컬럼을 확인해주세요.")
+
+train_raw["date_only"] = train_raw["real_time"].dt.date
+
+# 날짜별 mold_code 생산 개수
+daily_mold = train_raw.groupby(["date_only", "mold_code"]).size().reset_index(name="count")
+pivot_count = daily_mold.pivot(index="date_only", columns="mold_code", values="count").fillna(0)
+# ================================
+# 생산 시뮬레이션 탭 비율 그래프
+# ================================
+
 # ========== UI ==========
 years = list(range(2024, 2027))
 months = list(range(1, 13))
@@ -876,8 +900,12 @@ app_ui = ui.page_fluid(
                             style="flex: 0 0 auto;"
                         ),
                         ui.card(
-                            ui.card_header("📅 달력형 계획표"),
-                            ui.output_ui("calendar_view")
+                            ui.card_header("📅 달력형 계획표",
+                                ui.input_action_button("show_modal", "📊", class_="btn btn-primary", 
+                                    style="position:absolute; top:10px; right:10px; height:30px; font-size:12px; display:flex; align-items:center; justify-content:center;"
+                                )
+                            ),
+                            ui.output_ui("calendar_view"),
                         )
                     )
                 )
@@ -1905,6 +1933,34 @@ def server(input, output, session):
                     html += f"<div style='border:1px solid #ccc; min-height:80px; padding:4px; font-size:12px;'>{d}<br>{cell_html}</div>"
         html += "</div>"
         return ui.HTML(html)
+    
+    # ================================
+    # 생산 시뮬레이션 탭 비율 그래프
+    # ================================
+    @output
+    @render.plot
+    def mold_plot():
+        fig, ax = plt.subplots(figsize=(12, 6))
+        pivot_count.plot(kind="bar", stacked=True, ax=ax)
+        ax.set_title("날짜별 금형 코드 생산 개수")
+        ax.set_xlabel("날짜")
+        ax.set_ylabel("생산 개수")
+        ax.legend(title="금형 코드")
+        plt.tight_layout()
+        return fig
 
+    # 버튼 클릭 → 모달 띄우기
+    @reactive.effect
+    @reactive.event(input.show_modal)  # 버튼 클릭 감지
+    def _():
+        ui.modal_show(
+            ui.modal(
+                ui.output_plot("mold_plot"),
+                title="날짜별 금형 코드 생산 추이",
+                easy_close=True,
+                size="xl",
+                footer=ui.modal_button("닫기")
+            )
+        )
 
 app = App(app_ui, server, static_assets=app_dir / "www")

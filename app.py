@@ -145,6 +145,7 @@ label_map = {
     # 충진 단계
     "sleeve_temperature": "주입 관 온도",
     "ems_operation_time": "전자 교반(EMS) 가동 시간",
+    "EMS_operation_time": "전자 교반(EMS) 가동 시간",
     "low_section_speed": "하위 구간 주입 속도",
     "high_section_speed": "상위 구간 주입 속도",
     "mold_code": "금형 코드",
@@ -159,9 +160,11 @@ label_map = {
     "lower_mold_temp2": "하부2 금형 온도",
     "lower_mold_temp3": "하부3 금형 온도",
     "coolant_temperature": "냉각수 온도",
+    "Coolant_temperature": "냉각수 온도",
 
     # 공정 속도 관련
     "facility_operation_cycletime": "장비 전체 사이클 시간",
+    "facility_operation_cycleTime": "장비 전체 사이클 시간",
     "production_cycletime": "실제 생산 사이클 시간",
 
     # 품질 및 성능

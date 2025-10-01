@@ -7,10 +7,18 @@ import seaborn as sns
 import pathlib
 import plotly.express as px
 from shinywidgets import render_plotly, output_widget
-import plotly.express as px
 import numpy as np
 import matplotlib
 from sklearn.metrics import pairwise_distances
+import os
+from matplotlib import font_manager
+import matplotlib.pyplot as plt
+import plotly.io as pio
+import calendar
+import datetime
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+from scipy import stats
 
 matplotlib.use("Agg")   # Tkinter 대신 Agg backend 사용 (GUI 필요 없음)
 
@@ -19,12 +27,6 @@ app_dir = pathlib.Path(__file__).parent
 plt.rcParams["font.family"] = "Malgun Gothic"   # 윈도우: 맑은 고딕
 plt.rcParams["axes.unicode_minus"] = False      # 마이너스 기호 깨짐 방지
 
-
-
-import os
-from matplotlib import font_manager
-import matplotlib.pyplot as plt
-import plotly.io as pio
 
 # 폰트 파일 경로
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,9 +49,6 @@ pio.templates["nanum"] = pio.templates["plotly_white"].update(
     layout_font=dict(family="NanumGothic")
 )
 pio.templates.default = "nanum"
-
-
-
 
 # ===== 모델 불러오기 =====
 MODEL_PATH = "./models/model_2.pkl"
@@ -286,7 +285,77 @@ card_click_css = """
 </style>
 """
 
-# ===== UI =====
+# ========== 데이터 준비 ==========
+train = pd.read_csv("./data/train_raw.csv")
+train["time"] = pd.to_datetime(train["time"], errors="coerce")
+train["day"] = train["time"].dt.date
+# 몰드코드별 요약
+mold_cycle = (
+    train.groupby("mold_code")["facility_operation_cycleTime"]
+    .mean()
+    .reset_index(name="avg_facility_cycleTime")
+)
+mold_cycle["daily_capacity"] = (86400 / mold_cycle["avg_facility_cycleTime"]).round()
+
+daily_actual = train.groupby(["day", "mold_code"])["count"].agg(["min", "max"]).reset_index()
+daily_actual["daily_actual"] = daily_actual["max"] - daily_actual["min"] + 1
+
+mold_stats = daily_actual.groupby("mold_code")["daily_actual"].agg(
+    min_prod="min", max_prod="max", avg_prod="mean"
+).reset_index()
+
+mold_summary = pd.merge(mold_cycle, mold_stats, on="mold_code")
+
+# mold_code를 문자열로 변환
+mold_summary["mold_code"] = mold_summary["mold_code"].astype(int).astype(str)
+codes = list(mold_summary["mold_code"])
+last_code = codes[-1]
+
+# 색상 팔레트
+cmap = cm.get_cmap("tab10", len(codes))
+mold_colors = {code: mcolors.to_hex(cmap(i)) for i, code in enumerate(codes)}
+
+# ================================
+# 권장 세팅값 계산
+# ================================
+def smooth_series(series, window=5):
+    smoothed = series.rolling(window=window, center=True, min_periods=1).mean()
+    Q1, Q3 = smoothed.quantile(0.25), smoothed.quantile(0.75)
+    IQR = Q3 - Q1
+    lower, upper = Q1 - 1.5*IQR, Q3 + 1.5*IQR
+    filtered = smoothed[(smoothed >= lower) & (smoothed <= upper)]
+    return filtered.dropna()
+
+setting_cols = [
+    "molten_temp",
+    "upper_mold_temp1","upper_mold_temp2","upper_mold_temp3",
+    "lower_mold_temp1","lower_mold_temp2","lower_mold_temp3",
+    "sleeve_temperature","cast_pressure","biscuit_thickness",
+    "physical_strength","Coolant_temperature"
+]
+
+setting_table = {}
+for code, df in train.groupby("mold_code"):
+    settings = {}
+    for col in setting_cols:
+        smoothed = smooth_series(df[col].dropna())
+        if len(smoothed) == 0:
+            settings[col] = df[col].mean()
+            continue
+        try:
+            mode_val = stats.mode(smoothed, keepdims=True)[0][0]
+            settings[col] = mode_val
+        except Exception:
+            settings[col] = smoothed.mean()
+    setting_table[str(code)] = settings  # 🔑 mold_code를 문자열로 저장
+
+setting_df = pd.DataFrame(setting_table).T.reset_index().rename(columns={"index": "mold_code"})
+setting_df["mold_code"] = setting_df["mold_code"].astype(str)  # 문자열로 통일
+
+# ========== UI ==========
+years = list(range(2024, 2027))
+months = list(range(1, 13))
+
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.tags.link(rel="icon", type="image/x-icon", href="favicon.ico"),
@@ -311,6 +380,16 @@ app_ui = ui.page_fluid(
             }
             .input-daterange input {
                 width: 140px !important;   /* 각 칸 폭 */
+            }
+            .tooltip-inner {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                border: 1px solid #ccc !important;
+                max-width: 400px;   /* 툴팁이 너무 넓어지지 않게 제한 */
+                text-align: left;   /* 표 왼쪽 정렬 */
+            }
+            .tooltip.show {
+                opacity: 1 !important;   /* 툴팁이 흐려지지 않게 */
             }
         """)
     ),
@@ -802,6 +881,31 @@ app_ui = ui.page_fluid(
                         ui.output_ui("local_factor_desc")   # ← 설명 칸 추가
                     )
                 ),
+                ui.nav_panel(
+                    "생산계획 시뮬레이션",
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            ui.input_numeric("monthly_target", "이번 달 총 생산 목표 수량",
+                                            value=20000, min=1000, step=1000),
+                            ui.input_select("year", "연도 선택", {str(y): str(y) for y in years},
+                                            selected=str(datetime.date.today().year)),
+                            ui.input_select("month", "월 선택", {str(m): f"{m}월" for m in months},
+                                            selected=str(datetime.date.today().month)),
+                            ui.output_ui("mold_inputs"),
+                            ui.output_text("remaining_qty"),
+                            ui.input_action_button("run_plan", "시뮬레이션 실행", class_="btn btn-primary"),
+                        ),
+                        ui.card(
+                            ui.card_header("📊 금형코드별 요약"),
+                            ui.output_data_frame("mold_summary_table"),
+                            style="flex: 0 0 auto;"
+                        ),
+                        ui.card(
+                            ui.card_header("📅 달력형 계획표"),
+                            ui.output_ui("calendar_view")
+                        )
+                    )
+                )
             )
         ),
         # 4. 모델 학습
@@ -1623,8 +1727,168 @@ def server(input, output, session):
         )
 
         return fig
+    
+    #======================================================
+    # 금형코드 생산계획 시뮬레이션
+    #======================================================
+    # 동적 입력박스
+    @render.ui
+    def mold_inputs():
+        inputs = []
+        for code in codes[:-1]:
+            color = mold_colors[code]
+            label_html = ui.HTML(f"<span style='color:{color}; font-weight:bold;'>금형코드 {code}</span>")
+            inputs.append(
+                ui.input_numeric(f"target_{code}", label_html, value=0, min=0, step=100)
+            )
+        return inputs
 
+    # 남은 생산량 표시
+    @render.text
+    def remaining_qty():
+        total_target = input.monthly_target()
+        user_sum = sum(input[f"target_{code}"]() for code in codes[:-1])
+        remaining = total_target - user_sum
+        if user_sum > total_target:
+            return f"⚠️ 총합 {user_sum:,}개가 목표 {total_target:,}개를 초과했습니다!"
+        else:
+            return f"남은 생산량 (자동 {last_code}에 할당): {remaining:,}개"
 
+    # 3. 몰드코드 요약 (한글화 + 소수점 2자리)
+    @render.data_frame
+    def mold_summary_table():
+        df = mold_summary.copy()
+        df = df.rename(columns={
+            "mold_code": "금형코드",
+            "avg_facility_cycleTime": "평균설비사이클(초)",
+            "daily_capacity": "일일생산능력(이론)",
+            "min_prod": "최소일일생산량",
+            "max_prod": "최대일일생산량",
+            "avg_prod": "평균일일생산량"
+        })
+        # 수치형 포맷 적용 (소수점 둘째 자리까지)
+        df = df.round(2)
+        return df
+
+    # 시뮬레이션 실행 (버튼 클릭 시에만)
+    @reactive.event(input.run_plan)
+    def plan_df():
+        total_target = input.monthly_target()
+        year, month = int(input.year()), int(input.month())
+
+        targets = {}
+        user_sum = 0
+        for code in codes[:-1]:
+            qty = input[f"target_{code}"]()
+            targets[code] = qty
+            user_sum += qty
+        targets[last_code] = max(total_target - user_sum, 0)
+
+        if sum(targets.values()) == 0:
+            for _, row in mold_summary.iterrows():
+                code = row["mold_code"]
+                ratio = row["daily_capacity"] / mold_summary["daily_capacity"].sum()
+                targets[code] = int(total_target * ratio)
+
+        # === 해당 월의 실제 일수 반영 ===
+        _, last_day = calendar.monthrange(year, month)
+
+        weeks = ["3종류", "2종류", "3종류", "2종류"]
+        codes_3, codes_2 = codes[:3], codes[3:5]
+
+        schedule = []
+        day_counter = 0
+        for week_num, mode in enumerate(weeks, start=1):
+            if day_counter >= last_day:
+                break
+            selected = codes_3 if mode == "3종류" else codes_2
+            daily_sum = sum(
+                mold_summary.loc[mold_summary["mold_code"] == c, "daily_capacity"].values[0]
+                for c in selected
+            )
+            ratios = {
+                c: mold_summary.loc[mold_summary["mold_code"] == c, "daily_capacity"].values[0] / daily_sum
+                for c in selected
+            }
+            for day in range(1, 8):
+                day_counter += 1
+                if day_counter > last_day:
+                    break
+                for code in codes:
+                    if code in selected:
+                        total_target_code = targets[code]
+                        daily_plan = int((total_target_code / last_day) * ratios[code] * len(selected))
+                    else:
+                        daily_plan = 0
+                    schedule.append({
+                        "date": datetime.date(year, month, day_counter),
+                        "week": week_num,
+                        "day": day,
+                        "mold_code": code,
+                        "plan_qty": daily_plan
+                    })
+        return pd.DataFrame(schedule)
+
+    # 달력형 뷰 (버튼 클릭 시에만 갱신)
+    @render.ui
+    @reactive.event(input.run_plan)
+    def calendar_view():
+        df = plan_df()
+        year, month = int(input.year()), int(input.month())
+        cal = calendar.monthcalendar(year, month)
+        days_kr = ["월", "화", "수", "목", "금", "토", "일"]
+
+        html = '<div style="display:grid; grid-template-columns: 80px repeat(7, 1fr); gap:4px;">'
+        html += '<div></div>' + "".join([f"<div style='font-weight:bold; text-align:center;'>{d}</div>" for d in days_kr])
+
+        for w_i, week in enumerate(cal, start=1):
+            html += f"<div style='font-weight:bold;'>{w_i}주</div>"
+            for d in week:
+                if d == 0:
+                    html += "<div style='border:1px solid #ccc; min-height:80px; background:#f9f9f9;'></div>"
+                else:
+                    cell_date = datetime.date(year, month, d)
+                    cell_df = df[df["date"] == cell_date]
+
+                    cell_html = ""
+                    for _, r in cell_df.iterrows():
+                        if r["plan_qty"] > 0:
+                            code = str(r["mold_code"])
+
+                            # 세팅값 조회
+                            row = setting_df[setting_df["mold_code"] == code]
+                            if row.empty:
+                                tooltip_html = "<p>세팅값 없음</p>"
+                            else:
+                                settings = row.to_dict("records")[0]
+
+                            # HTML 표 생성
+                            rows_html = "".join([
+                                f"<tr><td>{label_map.get(k, k)}</td><td>{f'{v:.2f}' if isinstance(v, (int, float)) else v}</td></tr>"
+                                for k, v in settings.items() if k != "mold_code"
+                            ])
+                            tooltip_html = f"""
+                            <table class="table table-sm table-bordered" style="font-size:11px; background:white; color:black;">
+                                <thead><tr><th>변수</th><th>값</th></tr></thead>
+                                <tbody>{rows_html}</tbody>
+                            </table>
+                            """
+
+                            # 툴팁 적용
+                            cell_html += str(
+                                ui.tooltip(
+                                    ui.span(
+                                        f"{code}: {r['plan_qty']}",
+                                        style=f"color:{mold_colors[code]}; font-weight:bold;"
+                                    ),
+                                    ui.HTML(tooltip_html),  # 표 형태 툴팁
+                                    placement="right"
+                                )
+                            ) + "<br>"
+
+                    html += f"<div style='border:1px solid #ccc; min-height:80px; padding:4px; font-size:12px;'>{d}<br>{cell_html}</div>"
+        html += "</div>"
+        return ui.HTML(html)
 
 
 app = App(app_ui, server, static_assets=app_dir / "www")

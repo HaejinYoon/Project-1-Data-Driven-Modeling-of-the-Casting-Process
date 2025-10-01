@@ -293,6 +293,7 @@ app_ui = ui.page_fluid(
         ui.tags.link(rel="apple-touch-icon", sizes="180x180", href="apple-touch-icon.png"),
         ui.tags.link(rel="icon", type="image/png", sizes="192x192", href="icon-192.png"),
         ui.tags.link(rel="icon", type="image/png", sizes="512x512", href="icon-512.png"),
+        ui.tags.title("주조 공정 불량 예측"),
         # Font Awesome 아이콘 불러오기
         ui.tags.link(
             rel="stylesheet",
@@ -447,7 +448,7 @@ app_ui = ui.page_fluid(
             "데이터 탐색",
             ui.navset_tab(
                 ui.nav_panel(
-                    "개요",
+                    "주조 공정이란?",
                         # -------------------- 상단 SVG + 버튼 --------------------
                         ui.layout_columns(
                          # 1️⃣ 왼쪽 → SVG 그림
@@ -575,13 +576,13 @@ app_ui = ui.page_fluid(
                                 """)
                             )    
                 ),
-                ui.nav_panel("그래프",
+                ui.nav_panel("EDA",
                     ui.layout_sidebar(
                         ui.sidebar(
                             #분포 필터
                             ui.div(
                                 f"데이터 분포 그래프 필터",
-                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold; font-size: 14px"
                             ),
                             ui.input_selectize(
                                 "mold_code2",
@@ -662,7 +663,7 @@ app_ui = ui.page_fluid(
                             ui.card_header("입력 변수", style="background-color:#f8f9fa; text-align:center;"),
                             # 생산 환경 정보 카드 (최상단)
                             ui.card(
-                                ui.card_header("생산 환경 정보", style="background-color:#f8f9fa; text-align:center;"),
+                                ui.card_header("생산 환경 정보", style="text-align:center;"),
                                 ui.layout_columns(
                                     ui.div(
                                         f"생산 라인: {df_raw['line'].iloc[0]}",
@@ -682,7 +683,7 @@ app_ui = ui.page_fluid(
 
                             # === 공정 상태 관련 (4열) ===
                             ui.card(
-                                ui.card_header("공정 상태 관련", style="background-color:#f8f9fa;"),
+                                ui.card_header("공정 상태 관련", style=""),
                                 ui.layout_columns(
                                     ui.input_numeric("count", "일조 누적 제품 개수", value=int(df_predict["count"].mean())),
                                     ui.input_numeric("monthly_count", "월간 누적 제품 개수", value=int(df_predict["monthly_count"].mean())),
@@ -699,7 +700,7 @@ app_ui = ui.page_fluid(
 
                             # === 용융 단계 (n행 4열) ===
                             ui.card(
-                                ui.card_header("용융 단계", style="background-color:#f8f9fa;"),
+                                ui.card_header("용융 단계", style=""),
                                 ui.layout_columns(
                                     make_num_slider("molten_temp"),
                                     make_select("heating_furnace", "용해로"),
@@ -709,7 +710,7 @@ app_ui = ui.page_fluid(
 
                             # === 충진 단계 (n행 4열) ===
                             ui.card(
-                                ui.card_header("충진 단계", style="background-color:#f8f9fa;"),
+                                ui.card_header("충진 단계", style=""),
                                 ui.layout_columns(
                                     make_num_slider("sleeve_temperature"),
                                     make_num_slider("EMS_operation_time"),
@@ -724,7 +725,7 @@ app_ui = ui.page_fluid(
 
                             # === 냉각 단계 (n행 4열) ===
                             ui.card(
-                                ui.card_header("냉각 단계", style="background-color:#f8f9fa;"),
+                                ui.card_header("냉각 단계", style=""),
                                 ui.layout_columns(
                                     make_num_slider("upper_mold_temp1"),
                                     make_num_slider("upper_mold_temp2"),
@@ -739,7 +740,7 @@ app_ui = ui.page_fluid(
 
                             # === 공정 속도 관련 (n행 4열) ===
                             ui.card(
-                                ui.card_header("공정 속도 관련", style="background-color:#f8f9fa;"),
+                                ui.card_header("공정 속도 관련", style=""),
                                 ui.layout_columns(
                                     make_num_slider("facility_operation_cycleTime"),
                                     make_num_slider("production_cycletime"),
@@ -749,7 +750,7 @@ app_ui = ui.page_fluid(
 
                             # === 품질 및 성능 (n행 4열) ===
                             ui.card(
-                                ui.card_header("품질 및 성능", style="background-color:#f8f9fa;"),
+                                ui.card_header("품질 및 성능", style=""),
                                 ui.layout_columns(
                                     make_num_slider("biscuit_thickness"),
                                     make_num_slider("physical_strength"),
@@ -781,7 +782,7 @@ app_ui = ui.page_fluid(
                                     ],
                                     style="display:flex; align-items:center; width:100%;"
                                 ),
-                                style="text-align:center; background-color:#f8f9fa;"
+                                style="background-color:#f8f9fa; text-align:center;" 
                             ),
                             ui.output_ui("prediction_result")
                         ),
@@ -798,7 +799,7 @@ app_ui = ui.page_fluid(
                 ),
                 ui.nav_panel("개선",
                     ui.card(
-                        ui.card_header("불량 기여 요인 Top 5", style="background-color:#f8f9fa; text-align:center;"),
+                        ui.card_header("불량 기여 요인 Top 5", style="text-align:center;"),
                         ui.output_plot("local_factor_plot"),
                         ui.hr(),
                         ui.output_ui("local_factor_desc")   # ← 설명 칸 추가
@@ -864,7 +865,7 @@ def server(input, output, session):
         async def _(lbl=lbl):
             # 1️⃣ 탭 전환 (비동기 → await 필요)
             await session.send_custom_message("switch_tab_with_label", {
-                "tab": "그래프",
+                "tab": "EDA",
                 "label": lbl["var"]
             })
             # 2️⃣ 드롭다운 선택값 업데이트 (동기 → await 쓰면 안됨)

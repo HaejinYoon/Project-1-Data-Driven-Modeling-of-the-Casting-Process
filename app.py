@@ -1065,6 +1065,37 @@ def server(input, output, session):
      finally:
         loading.set(False)
     
+    @reactive.effect
+    @reactive.event(input.apply_suggestions)
+    def _():
+        factors = local_factors()
+        if factors is None or factors.empty:
+            return
+
+        top = factors.head(5).copy()
+        exclude_vars = ["count", "monthly_count", "global_count"]
+        use_num_cols = [c for c in num_cols if c not in exclude_vars]
+
+        baseline = df_predict[df_predict["passorfail"] == 0][use_num_cols].mean()
+        current = get_input_data().iloc[0][use_num_cols]
+
+        for _, row in top.iterrows():
+            feat = row["feature"]
+            col = [k for k, v in label_map.items() if v == feat]
+            if not col: 
+                continue
+            col = col[0]
+
+            if col in current.index:
+                diff = current[col] - baseline[col]
+                if abs(diff) > 1e-6:
+                    new_val = current[col] - diff/2   # 현재값과 baseline 사이 중간으로 이동
+                    update_slider(f"{col}_slider", value=float(new_val))
+                    update_numeric(col, value=float(new_val))
+                    print(f"[반영됨] {col}: {current[col]} → {new_val} (baseline {baseline[col]})")
+
+        # 🔹 자동 예측 실행
+        session.send_input_message("predict_btn", 1)
 
     @render.ui
     def prediction_result():
@@ -1390,14 +1421,18 @@ def server(input, output, session):
         """
         rows_html.append(row_html)
 
-        desc_html = f"""
-        <div style='padding:10px;'>
-         <b>이번 예측에서 불량률은 아래 요인들의 영향을 많이 받습니다:</b>
-         <div style='margin-top:10px;'>{''.join(rows_html)}</div>
-        </div>
-        """
-     return ui.HTML(desc_html)
-
+    # 🔹 for문 끝난 뒤에 return 실행
+     return ui.div(
+        [
+            ui.markdown("**이번 예측에서 불량률은 아래 요인들의 영향을 많이 받습니다:**"),
+            ui.HTML("".join(rows_html)),
+            ui.input_action_button(
+                "apply_suggestions", "✅ 반영하고 다시 예측하기",
+                class_="btn btn-warning", style="margin-top:15px;"
+            )
+        ]
+    )
+     
     @output
     @render.ui
     def ts_filter_ui():

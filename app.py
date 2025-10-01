@@ -1405,7 +1405,7 @@ def server(input, output, session):
               [matrix[1][0], matrix[1][1]]]   # 실제 정상 (FP, TN)
 
         fig, ax = plt.subplots(figsize=(4, 3))
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False, ax=ax,
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Oranges", cbar=False, ax=ax, color="tomato",
                     xticklabels=["Pred: 불량", "Pred: 정상"],
                     yticklabels=["Actual: 불량", "Actual: 정상"])
         ax.set_title(title)
@@ -1437,7 +1437,7 @@ def server(input, output, session):
     @render.plot
     def best_score_plot():
         fig, ax = plt.subplots(figsize=(6,4))
-        sns.barplot(data=df_scores, x="Model", y="BestScore", palette="Blues_r", ax=ax)
+        sns.barplot(data=df_scores, x="Model", y="BestScore", palette="Oranges_r", ax=ax)
 
         # 점수 표시
         for i, row in df_scores.iterrows():
@@ -2056,9 +2056,9 @@ def server(input, output, session):
 
             fig, ax = plt.subplots(figsize=(6,4))
             if pd.api.types.is_numeric_dtype(dff[var]):
-                sns.histplot(dff[var], bins=30, kde=True, ax=ax)
+                sns.histplot(dff[var], bins=30, kde=True, ax=ax, color="tomato")
             else:
-                dff[var].value_counts().plot(kind="bar", ax=ax)
+                dff[var].value_counts().plot(kind="bar", ax=ax, color="tomato")
 
             ax.set_title(f"{get_label(var)} 분포 (Mold {mold})")
             return fig

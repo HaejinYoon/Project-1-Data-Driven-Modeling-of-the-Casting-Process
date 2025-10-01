@@ -163,32 +163,32 @@ label_map = {
 # ===== 라벨 정의 (표시 텍스트 = 한글, 실제 var = 변수명) =====
 labels = [
     {"id": "label1", "text": label_map["upper_mold_temp1"], "var": "upper_mold_temp1",
-     "x": 200, "y": 50, "w": 120, "h": 30,
-     "arrow_from": (200+60, 80), "arrow_to": (400, 160)}, 
+     "x": 200, "y": 85, "w": 120, "h": 30,
+     "arrow_from": (260, 115), "arrow_to": (400, 195)}, 
 
     {"id": "label2", "text": label_map["lower_mold_temp1"], "var": "lower_mold_temp1",
-     "x": 650, "y": 50, "w": 120, "h": 30,
-     "arrow_from": (650+60, 80), "arrow_to": (580, 160)}, 
+     "x": 650, "y": 85, "w": 120, "h": 30,
+     "arrow_from": (710, 115), "arrow_to": (580, 195)}, 
 
     {"id": "label3", "text": label_map["cast_pressure"], "var": "cast_pressure",
-     "x": 900, "y": 250, "w": 100, "h": 30,
-     "arrow_from": (900+50, 280), "arrow_to": (780, 360)}, 
+     "x": 900, "y": 285, "w": 100, "h": 30,
+     "arrow_from": (950, 315), "arrow_to": (780, 395)}, 
 
     {"id": "label4", "text": label_map["molten_volume"], "var": "molten_volume",
-     "x": 700, "y": 150, "w": 120, "h": 30,
-     "arrow_from": (700+60, 180), "arrow_to": (780, 280)}, 
+     "x": 700, "y": 185, "w": 120, "h": 30,
+     "arrow_from": (760, 215), "arrow_to": (780, 315)}, 
 
     {"id": "label5", "text": label_map["sleeve_temperature"], "var": "sleeve_temperature",
-     "x": 670, "y": 400, "w": 120, "h": 30,
-     "arrow_from": (670+60, 400), "arrow_to": (600, 360)},
+     "x": 670, "y": 435, "w": 120, "h": 30,
+     "arrow_from": (730, 435), "arrow_to": (600, 395)},  
 
     {"id": "label6", "text": label_map["high_section_speed"], "var": "high_section_speed",
-     "x": 400, "y": 70, "w": 160, "h": 30,
-     "arrow_from": (400+80, 100), "arrow_to": (510, 180)}, 
+     "x": 400, "y": 105, "w": 160, "h": 30,
+     "arrow_from": (480, 135), "arrow_to": (510, 215)}, 
 
     {"id": "label7", "text": label_map["low_section_speed"], "var": "low_section_speed",
-     "x": 400, "y": 420, "w": 160, "h": 30,
-     "arrow_from": (400+80, 420), "arrow_to": (510, 320)},
+     "x": 400, "y": 455, "w": 160, "h": 30,
+     "arrow_from": (480, 455), "arrow_to": (510, 355)},
 ]
 
 def get_label(col): return label_map.get(col, col)

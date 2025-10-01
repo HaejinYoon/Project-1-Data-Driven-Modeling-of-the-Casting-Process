@@ -588,7 +588,7 @@ app_ui = ui.page_fluid(
                             ),
                             # 변수 선택 드롭다운
                             ui.input_select(
-                                "eda_explain_var", "Y축 변수 선택",
+                                "eda_explain_var1", "Y축 변수 선택",
                                 choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time","registration_time","passorfail"]}
                             ),
                         ),
@@ -608,7 +608,7 @@ app_ui = ui.page_fluid(
                             ),
                             # 변수 선택 드롭다운
                             ui.input_select(
-                                "eda_explain_var", "Y축 변수 선택",
+                                "eda_explain_var2", "Y축 변수 선택",
                                 choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time","registration_time","passorfail"]}
                             ),
                         ),

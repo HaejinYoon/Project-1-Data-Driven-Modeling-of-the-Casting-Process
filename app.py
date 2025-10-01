@@ -157,31 +157,31 @@ label_map = {
 labels = [
     {"id": "label1", "text": label_map["upper_mold_temp1"], "var": "upper_mold_temp1",
      "x": 200, "y": 50, "w": 120, "h": 30,
-     "arrow_from": (200+60, 80), "arrow_to": (400, 160)},  # 아랫변 중앙
+     "arrow_from": (200+60, 80), "arrow_to": (400, 160)}, 
 
     {"id": "label2", "text": label_map["lower_mold_temp1"], "var": "lower_mold_temp1",
      "x": 650, "y": 50, "w": 120, "h": 30,
-     "arrow_from": (650+60, 80), "arrow_to": (580, 160)},  # 아랫변 중앙
+     "arrow_from": (650+60, 80), "arrow_to": (580, 160)}, 
 
     {"id": "label3", "text": label_map["cast_pressure"], "var": "cast_pressure",
      "x": 900, "y": 250, "w": 100, "h": 30,
-     "arrow_from": (900+50, 280), "arrow_to": (780, 360)},  # 아랫변 중앙
+     "arrow_from": (900+50, 280), "arrow_to": (780, 360)}, 
 
     {"id": "label4", "text": label_map["molten_volume"], "var": "molten_volume",
      "x": 700, "y": 150, "w": 120, "h": 30,
-     "arrow_from": (700+60, 180), "arrow_to": (780, 280)},  # 아랫변 중앙
+     "arrow_from": (700+60, 180), "arrow_to": (780, 280)}, 
 
     {"id": "label5", "text": label_map["sleeve_temperature"], "var": "sleeve_temperature",
      "x": 670, "y": 400, "w": 120, "h": 30,
-     "arrow_from": (670+60, 400), "arrow_to": (600, 360)},  # 윗변 중앙
+     "arrow_from": (670+60, 400), "arrow_to": (600, 360)},
 
     {"id": "label6", "text": label_map["high_section_speed"], "var": "high_section_speed",
      "x": 400, "y": 70, "w": 160, "h": 30,
-     "arrow_from": (400+80, 100), "arrow_to": (510, 180)},  # 아랫변 중앙
+     "arrow_from": (400+80, 100), "arrow_to": (510, 180)}, 
 
     {"id": "label7", "text": label_map["low_section_speed"], "var": "low_section_speed",
      "x": 400, "y": 420, "w": 160, "h": 30,
-     "arrow_from": (400+80, 420), "arrow_to": (510, 320)},  # 윗변 중앙
+     "arrow_from": (400+80, 420), "arrow_to": (510, 320)},
 ]
 
 def get_label(col): return label_map.get(col, col)

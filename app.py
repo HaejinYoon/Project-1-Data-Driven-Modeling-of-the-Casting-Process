@@ -84,6 +84,16 @@ drop_cols_explore = ["id","line","name","mold_name","date","time", "registration
 df_explore = df_raw.drop(columns=drop_cols_explore, errors="ignore")  # ← 안전하게
 # mold_code는 남김
 
+
+# ✅ 파생 변수 자동 추가
+derived_cols = ["speed_ratio", "pressure_speed_ratio"]
+for col in derived_cols:
+    if col in df_predict.columns:
+        df_explore[col] = df_predict[col]
+
+print("df_predict 컬럼:", df_predict.columns.tolist())
+print("df_explore 컬럼:", df_explore.columns.tolist())
+
 # 예측에서 제외할 컬럼
 drop_cols = [
     "real_time",   # registration_time → real_time
@@ -154,7 +164,7 @@ label_map = {
     "global_count": "전체 누적 개수",
     "monthly_count": "월간 누적 개수",
     "speed_ratio": "상/하부 주입 속도 비율",
-	"pressure_speed_ratio": "주입 압력 비율 ",
+	"pressure_speed_ratio": "주입 압력 비율",
     "shift": "주/야간 교대",
 }
 
@@ -646,9 +656,16 @@ app_ui = ui.page_fluid(
                                 style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
                             ),
                             ui.input_select(
-                                "ts_var", "Y축 변수 선택",
-                                choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time", "registration_time", "passorfail"]}
-                                # choices=[c for c in df_raw.columns if c not in ["id","line","name","mold_name","date","time", "registration_time"]]
+                                "ts_var", "원본 변수 선택",
+                                choices=["없음"] + [get_label(c) for c in df_explore.columns 
+                                                   if c not in ["id","line","name","mold_name","date","time","registration_time","passorfail",
+                                                                "speed_ratio","pressure_speed_ratio"]],
+                                selected="없음"
+                            ),
+                            ui.input_select(
+                                "ts_var_derived", "파생 변수 선택",
+                                choices=["없음"] + [get_label(c) for c in ["speed_ratio","pressure_speed_ratio"] if c in df_explore.columns],
+                                selected="없음"
                             ),
                             ui.output_ui("ts_filter_ui")   # 시계열 전용 시간 필터
                         ),
@@ -934,6 +951,20 @@ def server(input, output, session):
     def _():
         update_navs("main_nav", selected="모델 학습")
     #=================================================================
+    
+    # 원본 변수 선택 시 → 파생 변수 '없음'으로 자동 변경
+    @reactive.effect
+    @reactive.event(input.ts_var)
+    def _():
+        if input.ts_var() != "없음":
+            ui.update_select("ts_var_derived", selected="없음")
+
+    # 파생 변수 선택 시 → 원본 변수 '없음'으로 자동 변경
+    @reactive.effect
+    @reactive.event(input.ts_var_derived)
+    def _():
+        if input.ts_var_derived() != "없음":
+            ui.update_select("ts_var", selected="없음")
 
     # 서버 함수 안에
     @reactive.effect
@@ -1601,12 +1632,39 @@ def server(input, output, session):
         if "registration_time" not in df_raw.columns:
             return px.scatter(title="⚠️ registration_time 없음")
 
-        var = input.ts_var()
+        # 변수 선택 처리
+        var = None
+
+        # 원본 선택된 경우
+        if input.ts_var() != "없음":
+            # 한글 라벨 → 컬럼명 변환
+            inv_map = {v: k for k, v in label_map.items()}
+            var = inv_map.get(input.ts_var(), input.ts_var())
+
+        # 파생 선택된 경우 (이미 컬럼명 그대로라 역매핑 불필요)
+        elif input.ts_var_derived() != "없음":
+            derived_map = {
+                "상/하부 주입 속도 비율": "speed_ratio",
+                "주입 압력 비율": "pressure_speed_ratio",
+            }
+            var = derived_map.get(input.ts_var_derived(), input.ts_var_derived())
+
+        # 아무 것도 선택 안 한 경우
+        if var is None:
+            return px.scatter(title="⚠️ 변수 선택 필요")
+        
         rng_start = pd.to_datetime(input.ts_start())
         rng_end   = pd.to_datetime(input.ts_end())
 
-        dff = df_raw.copy()
-        dff["registration_time"] = pd.to_datetime(dff["registration_time"], errors="coerce")
+        # dff = df_raw.copy()
+        # ✅ 원본 + 파생 변수가 모두 있는 df_explore 사용
+        dff = df_explore.copy()
+        
+        # df_explore에는 시간/라벨이 없으므로 df_raw에서 가져와 붙여줌
+        dff["registration_time"] = pd.to_datetime(df_raw["registration_time"], errors="coerce")
+        dff["passorfail"] = df_raw["passorfail"].values
+        
+        # 결측/범위 필터링
         dff = dff.dropna(subset=["registration_time", var, "passorfail"])
         dff = dff[(dff["registration_time"] >= rng_start) & (dff["registration_time"] <= rng_end)]
 

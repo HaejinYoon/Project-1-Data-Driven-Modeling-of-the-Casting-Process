@@ -10,6 +10,7 @@ from shinywidgets import render_plotly, output_widget
 import plotly.express as px
 import numpy as np
 import matplotlib
+from sklearn.metrics import pairwise_distances
 
 matplotlib.use("Agg")   # Tkinter 대신 Agg backend 사용 (GUI 필요 없음)
 
@@ -757,16 +758,52 @@ app_ui = ui.page_fluid(
             )
         ),
         # 4. 모델 학습
-        ui.nav_panel(
+       ui.nav_panel(
+        "모델 학습",
+        ui.card(
+         ui.card_header(
             "모델 학습",
-            # ui.card(ui.card_header("변수 중요도"), ui.output_plot("feature_importance_plot")),
-            # ui.card(ui.card_header("모델 성능"), ui.output_plot("model_eval_plot"))
-        ),
+            style="display:flex; justify-content:space-between; align-items:center;"
+            ),
+         ui.input_action_button(
+            "help_btn",  # 버튼 ID
+            ui.HTML('<i class="fa-solid fa-circle-question fa-lg" style="color:#007bff;"></i>'),
+            class_="btn btn-link",
+            style="position:absolute; top:10px; right:10px;"  # 카드 오른쪽 위에 고정
+         ),
+         ui.div("여기에 모델 학습 관련 내용 추가")
+    )
+),
         id="main_nav",   # ⭐ 탭 컨트롤을 위한 id
     )
 )
 
-        
+# ===== 대표 양품행 만드는 함수 =====
+def get_representative_good(X_row, n_neighbors=3):
+    # 사용 가능한 수치형/범주형 분리
+    exclude_vars = ["count", "monthly_count", "global_count"]
+    use_num_cols = [c for c in num_cols if c not in exclude_vars]
+
+    good_df = df_predict[df_predict["passorfail"] == 0][use_num_cols + cat_cols].dropna()
+
+    # --- 수치형 거리 계산 ---
+    num_dist = pairwise_distances(
+        X_row[use_num_cols], good_df[use_num_cols], metric="euclidean"
+    )[0]
+
+    # 가까운 N개 index
+    idx = np.argsort(num_dist)[:n_neighbors]
+    nearest = good_df.iloc[idx]
+
+    # 대표행 만들기: 수치형 = 평균, 범주형 = 최빈값
+    rep = {}
+    for col in use_num_cols:
+        rep[col] = nearest[col].mean()
+    for col in cat_cols:
+        rep[col] = nearest[col].mode().iloc[0]
+
+    return pd.DataFrame([rep])
+      
 # ===== SERVER (변경 없음) =====
 def server(input, output, session):
     #====== 개요에서 카드 클릭 시 탭이동 =================================
@@ -938,47 +975,69 @@ def server(input, output, session):
                 footer=ui.modal_button("닫기")
             )
         )
-
+    @reactive.effect
+    @reactive.event(input.help_btn)
+    def _():
+     ui.modal_show(
+    ui.modal(
+        ui.div(
+            [
+                ui.markdown("모델 학습 과정을 도와드리겠습니다."),
+                 ui.div(
+                        ui.tags.img(
+                            src="help.jpg",
+                            style="width:300px; border-radius:10px;"
+                        ),
+                        style="text-align:center; margin-top:15px;"
+                 )
+            ]
+        ),
+        title="📘 모델 학습 도우미",
+        easy_close=True,
+        footer=ui.modal_button("010-4377-9710 연락주세요")
+    )
+)
+    
     @reactive.effect
     @reactive.event(input.predict_btn)
     def _():
-        loading.set(True)
-        try:
-            X = get_input_data()
-            proba = model.predict_proba(X)[0, 1]
-            last_proba.set(proba)
+     loading.set(True)
+     try:
+        X = get_input_data()
+        proba = model.predict_proba(X)[0, 1]
+        last_proba.set(proba)
 
-            # === 불량 기여 요인 계산 ===
-            # 1) 누적형 변수 제거
-            exclude_vars = ["count", "monthly_count", "global_count"]
-            use_num_cols = [c for c in num_cols if c not in exclude_vars]
+        # === 불량 기여 요인 계산 ===
+        # 1) 누적형 변수 제거
+        exclude_vars = ["count", "monthly_count", "global_count"]
+        use_num_cols = [c for c in num_cols if c not in exclude_vars]
 
-            baseline = df_predict[df_predict["passorfail"] == 0][use_num_cols].mean()
-            current = X[use_num_cols].iloc[0]
+        baseline = df_predict[df_predict["passorfail"] == 0][use_num_cols].mean()
+        current = X[use_num_cols].iloc[0]
 
-            # 2) 표준화 거리 (표준편차로 나눔)
-            stds = df_predict[use_num_cols].std().replace(0, 1)  # 분모=0 방지
-            diffs = ((current - baseline) / stds) ** 2
+        # 2) 표준화 거리 (표준편차로 나눔)
+        stds = df_predict[use_num_cols].std().replace(0, 1)  # 분모=0 방지
+        diffs = ((current - baseline) / stds) ** 2
 
-            # 3) 기여도 계산
-            if diffs.sum() > 0:
-               contrib = (diffs / diffs.sum()).sort_values(ascending=False)
-               local_factors.set(
-                   pd.DataFrame({
-                     "feature": [get_label(c) for c in contrib.index],
-                     "importance": contrib.values
-                 })
-              )
-            else:
-                 local_factors.set(
-        pd.DataFrame({"feature": [], "importance": []})
-    )
+        # 3) 기여도 계산
+        if diffs.sum() > 0:
+            contrib = (diffs / diffs.sum()).sort_values(ascending=False)
+            local_factors.set(
+                pd.DataFrame({
+                    "feature": [get_label(c) for c in contrib.index],
+                    "importance": contrib.values
+                })
+            )
+        else:
+            local_factors.set(
+                pd.DataFrame({"feature": [], "importance": []})
+            )
 
-        except Exception as e:
-            last_proba.set(f"error:{e}")
-        finally:
-            loading.set(False)
-
+     except Exception as e:
+        last_proba.set(f"error:{e}")
+     finally:
+        loading.set(False)
+    
 
     @render.ui
     def prediction_result():

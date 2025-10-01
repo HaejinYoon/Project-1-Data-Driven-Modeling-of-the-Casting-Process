@@ -539,11 +539,11 @@ app_ui = ui.page_fluid(
                     ui.tags.p("[바로가기]", class_="card-link-text")
                 ),
 
-                # 모델링
+                # 모델 학습
                 ui.card(
                     {"class": "overview-card", "style": "border: 2px solid #80CBC4; color: #80CBC4;"},
                     ui.card_header(
-                        "모델링",
+                        "모델 학습",
                         style=(
                             "background-color: #80CBC4; color: #333; "
                             "font-weight:bold; font-size:20px; text-align:center; "
@@ -638,8 +638,8 @@ app_ui = ui.page_fluid(
                         ui.div(
                             {
                                 "style": """
-                                    margin-top:30px; 
-                                    padding:20px; 
+                                    margin-top:5px; 
+                                    padding:5px; 
                                     border:1px solid #ddd; 
                                     border-radius:10px; 
                                     background:#fafafa;

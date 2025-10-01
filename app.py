@@ -578,6 +578,45 @@ app_ui = ui.page_fluid(
                                 output_widget("timeseries_plot")
                         ),
                     ),
+                    # === 새로 추가된 블록 ===
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            # 회색 제목 박스
+                            ui.div(
+                                "데이터 전처리 후",
+                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                            ),
+                            # 변수 선택 드롭다운
+                            ui.input_select(
+                                "eda_explain_var", "Y축 변수 선택",
+                                choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time","registration_time","passorfail"]}
+                            ),
+                        ),
+                        ui.card(
+                            ui.card_header("전처리 후 Boxplot"),
+                            ui.markdown("여기에 변수별 설명이 표시될 예정입니다.")
+                        ),
+                    ),
+                    
+                    # === 새로 추가된 블록 2===
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            # 회색 제목 박스
+                            ui.div(
+                                "파생 변수 설명",
+                                style="background-color:#e9ecef; padding:8px 12px; border-radius:6px; text-align:center; font-weight:bold;"
+                            ),
+                            # 변수 선택 드롭다운
+                            ui.input_select(
+                                "eda_explain_var", "Y축 변수 선택",
+                                choices={c: get_label(c) for c in df_explore.columns if c not in ["id","line","name","mold_name","date","time","registration_time","passorfail"]}
+                            ),
+                        ),
+                        ui.card(
+                            ui.card_header("파생 변수 설명"),
+                            ui.markdown("여기에 변수별 설명이 표시될 예정입니다.")
+                        ),
+                    ),                        
                     # ui.layout_columns(
                         # # 1행
                         # ui.card(

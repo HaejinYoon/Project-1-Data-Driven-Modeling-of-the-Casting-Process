@@ -27,7 +27,6 @@ app_dir = pathlib.Path(__file__).parent
 plt.rcParams["font.family"] = "Malgun Gothic"   # 윈도우: 맑은 고딕
 plt.rcParams["axes.unicode_minus"] = False      # 마이너스 기호 깨짐 방지
 
-
 # 폰트 파일 경로
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 font_path = os.path.join(APP_DIR, "www", "fonts", "NanumGothic-Regular.ttf")
@@ -504,7 +503,7 @@ app_ui = ui.page_fluid(
                 ui.card(
                     {"class": "overview-card", "style": "border: 2px solid #A5C16A; color: #A5C16A;"},
                     ui.card_header(
-                        "예측",
+                        "예측 시뮬레이션",
                         style=(
                             "background-color: #A5C16A; color: #333; "
                             "font-weight:bold; font-size:20px; text-align:center; "
@@ -729,7 +728,7 @@ app_ui = ui.page_fluid(
 
         # 5. 예측
         ui.nav_panel(
-            "예측",
+            "예측 시뮬레이션",
             ui.navset_tab(
                 ui.nav_panel("예측",
                     # 입력 변수 카드
@@ -872,7 +871,7 @@ app_ui = ui.page_fluid(
                     ),
 
                 ),
-                ui.nav_panel("개선",
+                ui.nav_panel("개선 방안",
                     ui.card(
                         ui.card_header("불량 기여 요인 Top 5", style="text-align:center;"),
                         ui.output_plot("local_factor_plot"),
@@ -881,7 +880,7 @@ app_ui = ui.page_fluid(
                     )
                 ),
                 ui.nav_panel(
-                    "생산계획 시뮬레이션",
+                    "생산계획",
                     ui.layout_sidebar(
                         ui.sidebar(
                             ui.input_numeric("monthly_target", "이달의 총 생산 목표 수",
@@ -977,7 +976,7 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.go_predict)
     def _():
-        update_navs("main_nav", selected="예측")
+        update_navs("main_nav", selected="예측 시뮬레이션")
 
     @reactive.Effect
     @reactive.event(input.go_model)

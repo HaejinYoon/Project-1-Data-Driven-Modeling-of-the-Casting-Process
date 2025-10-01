@@ -448,7 +448,7 @@ app_ui = ui.page_fluid(
             "데이터 탐색",
             ui.navset_tab(
                 ui.nav_panel(
-                    "개요",
+                    "주조 공정이란?",
                         # -------------------- 상단 SVG + 버튼 --------------------
                         ui.layout_columns(
                          # 1️⃣ 왼쪽 → SVG 그림
@@ -576,7 +576,7 @@ app_ui = ui.page_fluid(
                                 """)
                             )    
                 ),
-                ui.nav_panel("그래프",
+                ui.nav_panel("EDA",
                     ui.layout_sidebar(
                         ui.sidebar(
                             #분포 필터
@@ -865,7 +865,7 @@ def server(input, output, session):
         async def _(lbl=lbl):
             # 1️⃣ 탭 전환 (비동기 → await 필요)
             await session.send_custom_message("switch_tab_with_label", {
-                "tab": "그래프",
+                "tab": "EDA",
                 "label": lbl["var"]
             })
             # 2️⃣ 드롭다운 선택값 업데이트 (동기 → await 쓰면 안됨)

@@ -968,23 +968,275 @@ app_ui = ui.page_fluid(
                 )
             )
         ),
-        # 4. 모델 학습
-       ui.nav_panel(
-        "모델 학습",
-        ui.card(
-         ui.card_header(
-            "모델 학습",
-            style="display:flex; justify-content:space-between; align-items:center;"
-            ),
-         ui.input_action_button(
-            "help_btn",  # 버튼 ID
-            ui.HTML('<i class="fa-solid fa-circle-question fa-lg" style="color:#007bff;"></i>'),
-            class_="btn btn-link",
-            style="position:absolute; top:10px; right:10px;"  # 카드 오른쪽 위에 고정
-         ),
-         ui.div("여기에 모델 학습 관련 내용 추가")
+# 4. 모델 학습
+ui.nav_panel(
+    "모델 학습",
+    ui.navset_tab(
+
+        # ============================
+        # 서브탭 1: 모델 선택
+        # ============================
+        ui.nav_panel(
+            "모델 선택",
+            ui.div(
+                [
+                    # 🔹 첫 줄: 혼동 행렬 3개
+                    ui.layout_columns(
+                        ui.card(
+                            ui.card_header(
+                                ui.div(
+                                    [
+                                        "Random Forest",
+                                        ui.tooltip(
+                                            ui.tags.i(
+                                                class_="fa-solid fa-circle-info",
+                                                style="color:#007bff; cursor:pointer; margin-left:6px;"
+                                            ),
+                                            ui.HTML("""
+                                                <p style="font-size:13px; font-weight:bold; margin-top:0; margin-bottom:6px;">
+                                                    혼동행렬 설명
+                                                </p>
+                                                <table border="1" style="border-collapse:collapse; font-size:12px; text-align:center;">
+                                                    <thead style="background:#f9f9f9;">
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>Pred: 불량</th>
+                                                            <th>Pred: 정상</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <th style="background:#f9f9f9;">Actual: 불량</th>
+                                                            <td style="color:green; font-weight:bold;">TP</td>
+                                                            <td style="color:red; font-weight:bold;">FN</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th style="background:#f9f9f9;">Actual: 정상</th>
+                                                            <td style="color:red; font-weight:bold;">FP</td>
+                                                            <td style="color:green; font-weight:bold;">TN</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <p style="font-size:12px; margin-top:6px; text-align:left;">
+                                                    - <b>TP</b>: 실제 불량을 불량으로 예측<br>
+                                                    - <b>FN</b>: 실제 불량을 정상으로 잘못 예측<br>
+                                                    - <b>FP</b>: 실제 정상을 불량으로 잘못 예측<br>
+                                                    - <b>TN</b>: 실제 정상을 정상으로 예측
+                                                </p>
+                                            """),
+                                            placement="right"
+                                        )
+                                    ],
+                                    style="display:flex; align-items:center;"
+                                )
+                            ),
+                            ui.output_plot("rf_cm")
+                        ),
+                        ui.card(
+                            ui.card_header(
+                                ui.div(
+                                    [
+                                        "LightGBM",
+                                        ui.tooltip(
+                                            ui.tags.i(
+                                                class_="fa-solid fa-circle-info",
+                                                style="color:#007bff; cursor:pointer; margin-left:6px;"
+                                            ),
+                                            ui.HTML("""
+                                                <p style="font-size:13px; font-weight:bold; margin-top:0; margin-bottom:6px;">
+                                                    혼동행렬 설명
+                                                </p>
+                                                <table border="1" style="border-collapse:collapse; font-size:12px; text-align:center;">
+                                                    <thead style="background:#f9f9f9;">
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>Pred: 불량</th>
+                                                            <th>Pred: 정상</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <th style="background:#f9f9f9;">Actual: 불량</th>
+                                                            <td style="color:green; font-weight:bold;">TP</td>
+                                                            <td style="color:red; font-weight:bold;">FN</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th style="background:#f9f9f9;">Actual: 정상</th>
+                                                            <td style="color:red; font-weight:bold;">FP</td>
+                                                            <td style="color:green; font-weight:bold;">TN</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <p style="font-size:12px; margin-top:6px; text-align:left;">
+                                                    - <b>TP</b>: 실제 불량을 불량으로 예측<br>
+                                                    - <b>FN</b>: 실제 불량을 정상으로 잘못 예측<br>
+                                                    - <b>FP</b>: 실제 정상을 불량으로 잘못 예측<br>
+                                                    - <b>TN</b>: 실제 정상을 정상으로 예측
+                                                </p>
+                                            """),
+                                            placement="right"
+                                        )
+                                    ],
+                                    style="display:flex; align-items:center;"
+                                )
+                            ),
+                            ui.output_plot("lgbm_cm")
+                        ),
+                        ui.card(
+                            ui.card_header(
+                                ui.div(
+                                    [
+                                        "XGBoost",
+                                        ui.tooltip(
+                                            ui.tags.i(
+                                                class_="fa-solid fa-circle-info",
+                                                style="color:#007bff; cursor:pointer; margin-left:6px;"
+                                            ),
+                                            ui.HTML("""
+                                                <p style="font-size:13px; font-weight:bold; margin-top:0; margin-bottom:6px;">
+                                                    혼동행렬 설명
+                                                </p>
+                                                <table border="1" style="border-collapse:collapse; font-size:12px; text-align:center;">
+                                                    <thead style="background:#f9f9f9;">
+                                                        <tr>
+                                                            <th></th>
+                                                            <th>Pred: 불량</th>
+                                                            <th>Pred: 정상</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <th style="background:#f9f9f9;">Actual: 불량</th>
+                                                            <td style="color:green; font-weight:bold;">TP</td>
+                                                            <td style="color:red; font-weight:bold;">FN</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th style="background:#f9f9f9;">Actual: 정상</th>
+                                                            <td style="color:red; font-weight:bold;">FP</td>
+                                                            <td style="color:green; font-weight:bold;">TN</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <p style="font-size:12px; margin-top:6px; text-align:left;">
+                                                    - <b>TP</b>: 실제 불량을 불량으로 예측<br>
+                                                    - <b>FN</b>: 실제 불량을 정상으로 잘못 예측<br>
+                                                    - <b>FP</b>: 실제 정상을 불량으로 잘못 예측<br>
+                                                    - <b>TN</b>: 실제 정상을 정상으로 예측
+                                                </p>
+                                            """),
+                                            placement="right"
+                                        )
+                                    ],
+                                    style="display:flex; align-items:center;"
+                                )
+                            ),
+                            ui.output_plot("xgb_cm")
+                        ),
+                        col_widths=[4,4,4]
+                    ),
+
+                    ui.br(),
+
+                    # 🔹 두 번째 줄: Best Score 카드
+                    ui.card(
+                        ui.card_header(
+                            ui.div(
+                                [
+                                    "📊 Best Score 결과",
+                                    ui.tooltip(
+                                        ui.tags.i(
+                                            class_="fa-solid fa-circle-info",
+                                            style="color:#007bff; cursor:pointer; margin-left:8px;"
+                                        ),
+                                        ui.HTML("""
+                                            <p style="font-size:13px; font-weight:bold; margin-top:0; margin-bottom:6px;">
+                                                Best Score 계산 공식
+                                            </p>
+                                            <p style="font-size:13px; line-height:1.6; text-align:left;">
+                                                Best Score = (0.1 × Accuracy) + (0.6 × Recall) + (0.3 × F1)<br><br>
+                                                - Accuracy (ACC): 전체 데이터 중 예측이 맞은 비율<br>
+                                                - Recall: 실제 불량 중에서 불량으로 올바르게 잡아낸 비율<br>
+                                                - F1 Score: Precision과 Recall의 조화 평균<br><br>
+                                                ※ 불량 검출 중요도를 높이기 위해 <b>Recall 가중치(0.6)</b>를 가장 크게 부여했습니다.
+                                            </p>
+                                        """),
+                                        placement="right"
+                                    )
+                                ],
+                                style="display:flex; align-items:center;"
+                            )
+                        ),
+                        ui.div(
+                            [
+                                # 표
+                                ui.HTML(""" 
+                                    <div style="padding:10px; font-size:15px;">
+                                        <p><b>가중치: ACC(0.1), Recall(0.6), F1(0.3)</b></p>
+                                        <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
+                                            <thead style="background:#f0f0f0;">
+                                                <tr>
+                                                    <th>Model</th>
+                                                    <th>ACC</th>
+                                                    <th>Recall</th>
+                                                    <th>F1</th>
+                                                    <th>Best Score</th>
+                                                    <th>Rank</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>XGBoost</td>
+                                                    <td>0.990</td>
+                                                    <td>0.978</td>
+                                                    <td>0.923</td>
+                                                    <td>0.9627</td>
+                                                    <td>🥇 1위</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>LightGBM</td>
+                                                    <td>0.994</td>
+                                                    <td>0.968</td>
+                                                    <td>0.930</td>
+                                                    <td>0.9592</td>
+                                                    <td>🥈 2위</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>RandomForest</td>
+                                                    <td>0.990</td>
+                                                    <td>0.976</td>
+                                                    <td>0.899</td>
+                                                    <td>0.9543</td>
+                                                    <td>🥉 3위</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <br>
+                                    </div>
+                                """),
+
+                                # 그래프 출력
+                                ui.output_plot("best_score_plot")
+                            ]
+                        )
+                    )
+
+                ]
+            )
+        ),
+
+        # ============================
+        # 서브탭 2: 모델 설명
+        # ============================
+        ui.nav_panel(
+            "모델 설명",
+            ui.card(
+                ui.card_header("최종 모델 설명"),
+                ui.HTML("<p>여기에 최종 선정된 모델 설명과 분석 근거를 추가할 수 있습니다.</p>")
+            )
+        )
     )
 ),
+
         id="main_nav",   # ⭐ 탭 컨트롤을 위한 id
     )
 )
@@ -1088,6 +1340,63 @@ def server(input, output, session):
                 "ts_var",
                 update_select("ts_var", selected=lbl["var"])
             )
+
+    # ===== 모델 학습 - 혼동 행렬 =====
+    conf_matrices = {
+        "Random Forest": [[488, 12], [88, 9412]],
+        "LightGBM": [[484, 16], [44, 9456]],
+        "XGBoost": [[489, 11], [89, 9411]],
+    }
+
+    def plot_confusion_matrix(matrix, title):
+        cm = [[matrix[0][0], matrix[0][1]],   # 실제 불량 (TP, FN)
+              [matrix[1][0], matrix[1][1]]]   # 실제 정상 (FP, TN)
+
+        fig, ax = plt.subplots(figsize=(4, 3))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False, ax=ax,
+                    xticklabels=["Pred: 불량", "Pred: 정상"],
+                    yticklabels=["Actual: 불량", "Actual: 정상"])
+        ax.set_title(title)
+        plt.tight_layout()
+        return fig
+
+    @output
+    @render.plot
+    def rf_cm():
+        return plot_confusion_matrix(conf_matrices["Random Forest"], "Random Forest")
+
+    @output
+    @render.plot
+    def lgbm_cm():
+        return plot_confusion_matrix(conf_matrices["LightGBM"], "LightGBM")
+
+    @output
+    @render.plot
+    def xgb_cm():
+        return plot_confusion_matrix(conf_matrices["XGBoost"], "XGBoost")
+
+    # Best Score 데이터
+    df_scores = pd.DataFrame({
+        "Model": ["XGBoost", "LightGBM", "RandomForest"],
+        "BestScore": [0.9627, 0.9592, 0.9543]
+    })
+    
+    @output
+    @render.plot
+    def best_score_plot():
+        fig, ax = plt.subplots(figsize=(6,4))
+        sns.barplot(data=df_scores, x="Model", y="BestScore", palette="Blues_r", ax=ax)
+    
+        # 점수 표시
+        for i, row in df_scores.iterrows():
+            ax.text(i, row["BestScore"] + 0.0003, f"{row['BestScore']:.4f}", 
+                    ha="center", fontsize=10)
+    
+        ax.set_title("Model Best Score Ranking (ACC 0.1, Recall 0.6, F1 0.3)", fontsize=12)
+        ax.set_ylabel("Best Score")
+        ax.set_ylim(0.953, 0.964)
+        plt.tight_layout()
+        return fig
 
     @output
     @render.text

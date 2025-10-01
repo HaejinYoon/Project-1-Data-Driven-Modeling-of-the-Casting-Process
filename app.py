@@ -293,6 +293,7 @@ app_ui = ui.page_fluid(
         ui.tags.link(rel="apple-touch-icon", sizes="180x180", href="apple-touch-icon.png"),
         ui.tags.link(rel="icon", type="image/png", sizes="192x192", href="icon-192.png"),
         ui.tags.link(rel="icon", type="image/png", sizes="512x512", href="icon-512.png"),
+        ui.tags.title("주조 공정 불량 예측"),
         # Font Awesome 아이콘 불러오기
         ui.tags.link(
             rel="stylesheet",

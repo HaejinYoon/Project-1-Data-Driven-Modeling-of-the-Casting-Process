@@ -884,7 +884,7 @@ app_ui = ui.page_fluid(
                     "생산계획 시뮬레이션",
                     ui.layout_sidebar(
                         ui.sidebar(
-                            ui.input_numeric("monthly_target", "이번 달 총 생산 목표 수량",
+                            ui.input_numeric("monthly_target", "이달의 총 생산 목표 수",
                                             value=20000, min=1000, step=1000),
                             ui.input_select("year", "연도 선택", {str(y): str(y) for y in years},
                                             selected=str(datetime.date.today().year)),
@@ -895,17 +895,25 @@ app_ui = ui.page_fluid(
                             ui.input_action_button("run_plan", "시뮬레이션 실행", class_="btn btn-primary"),
                         ),
                         ui.card(
-                            ui.card_header("📊 금형코드별 요약"),
+                            ui.card_header("금형코드별 생산성 요약"),
                             ui.output_data_frame("mold_summary_table"),
                             style="flex: 0 0 auto;"
                         ),
                         ui.card(
-                            ui.card_header("📅 달력형 계획표",
-                                ui.input_action_button("show_modal", "📊", class_="btn btn-primary", 
+                            ui.card_header("달력형 계획표",
+                                ui.input_action_button("show_modal", "날짜별 금형 코드 생산 추이", class_="btn btn-primary", 
                                     style="position:absolute; top:10px; right:10px; height:30px; font-size:12px; display:flex; align-items:center; justify-content:center;"
-                                )
+                                ),
                             ),
                             ui.output_ui("calendar_view"),
+                            ui.p(
+                                "※ 몰드코드에 따른 공정 조건을 확인하세요!", 
+                                style="font-size:15px; color:gray; margin-top:4px;"
+                            ),
+                            ui.p(
+                                "※ 선택한 연월의 금형 계획과 공정 조건을 확인 가능 합니다. 몰드별 최대 생산량을 고려한 조건임을 유의하세요.", 
+                                style="font-size:15px; color:gray; margin-top:4px;"
+                            )
                         )
                     )
                 )
@@ -1510,7 +1518,7 @@ def server(input, output, session):
      factors = local_factors()
      if factors is None or factors.empty:
         fig, ax = plt.subplots()
-        ax.text(0.5, 0.5, "아직 예측 실행 안 됨", ha="center", va="center")
+        ax.text(0.5, 0.5, "아직 예측을 실행하지 않았습니다.", ha="center", va="center")
         ax.axis("off")
         return fig
 
@@ -1539,7 +1547,7 @@ def server(input, output, session):
     def local_factor_desc():
      factors = local_factors()
      if factors is None or factors.empty:
-        return ui.markdown("아직 예측 실행 안 됨")
+        return ui.markdown("아직 예측을 실행하지 않았습니다.")
 
      top = factors.head(5).copy()
      top["importance"] = top["importance"] * 100
@@ -1794,9 +1802,12 @@ def server(input, output, session):
         user_sum = sum(input[f"target_{code}"]() for code in codes[:-1])
         remaining = total_target - user_sum
         if user_sum > total_target:
-            return f"⚠️ 총합 {user_sum:,}개가 목표 {total_target:,}개를 초과했습니다!"
+            return f"⚠️ 총합 {user_sum:,}개가 월 생산량 목표 {total_target:,}개를 초과했습니다!"
         else:
-            return f"남은 생산량 (자동 {last_code}에 할당): {remaining:,}개"
+            return f"남은 생산량 : {remaining:,}개 (금형코드 {last_code}에 할당)"
+
+
+
 
     # 3. 몰드코드 요약 (한글화 + 소수점 2자리)
     @render.data_frame
@@ -1879,8 +1890,9 @@ def server(input, output, session):
     def calendar_view():
         df = plan_df()
         year, month = int(input.year()), int(input.month())
+        calendar.setfirstweekday(calendar.SUNDAY)
+        days_kr = ["일", "월", "화", "수", "목", "금", "토"]
         cal = calendar.monthcalendar(year, month)
-        days_kr = ["월", "화", "수", "목", "금", "토", "일"]
 
         html = '<div style="display:grid; grid-template-columns: 80px repeat(7, 1fr); gap:4px;">'
         html += '<div></div>' + "".join([f"<div style='font-weight:bold; text-align:center;'>{d}</div>" for d in days_kr])

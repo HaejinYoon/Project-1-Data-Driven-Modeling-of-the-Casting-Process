@@ -1234,6 +1234,17 @@ ui.nav_panel(
                     # 🔹 1. XGBoost 선택 이유 (상단 공통 카드)
                     ui.card(
                         ui.card_header("왜 XGBoost를 최종 모델로 선택했는가?"),
+
+
+                        ui.input_action_button(
+                            "help_btn",  # 버튼 ID
+                            ui.HTML('<i class="fa-solid fa-circle-question fa-lg" style="color:#007bff;"></i>'),
+                            class_="btn btn-link",
+                            style="position:absolute; top:10px; right:10px;"  # 카드 오른쪽 위에 고정
+                        ),
+
+
+
                         ui.HTML("""
                             <ul style="font-size:15px; line-height:1.8; text-align:left;">
                                 <li><b>불량 검출 (Recall) 최우선</b>: XGBoost Recall 97.8% (세 모델 중 최고)</li>
@@ -1259,8 +1270,8 @@ ui.nav_panel(
                             ui.HTML("""
                                 <p style="font-size:14px; text-align:left; line-height:1.6; margin:10px;">
                                     - 월간 생산 횟수, 슬리브 온도, 금형 온도 변수가 가장 큰 영향을 미침<br>
-                                    - 불량 판정의 주요 기준이 <b>온도·횟수·압력</b>임을 데이터가 보여줌<br>
-                                    - 현장에서 <b>관리 우선순위 변수</b>를 직관적으로 확인 가능
+                                    - 해당 다이캐스팅 공정 환경에서 불량 판정의 주요 기준이 <b>온도·횟수·압력</b>임을 확인<br>
+                                    - 생산 현장에서 <b>우선적으로 관리가 필요한 변수 순위</b>를 직관적으로 확인 가능<br>
                                 </p>
                             """)
                         ),
@@ -1269,14 +1280,14 @@ ui.nav_panel(
                         ui.card(
                             ui.card_header("SHAP Summary Plot (변수 영향 방향성)"),
                             ui.tags.img(
-                                src="shap_summary.png",   # www 폴더 안에 넣어두기
-                                style="width:100%; height:auto; border-radius:6px; margin-bottom:10px;"
+                                src="shap_summary.png",
+                                style="max-width:550px; height:auto; border-radius:6px; margin-bottom:10px;"
                             ),
                             ui.HTML("""
                                 <p style="font-size:14px; text-align:left; line-height:1.6; margin:10px;">
-                                    - <b>압력/속도 비율↑</b> → 불량 ↑ (과도한 압력/속도 불균형 문제)<br>
-                                    - <b>생산 횟수↑</b> → 불량 ↓ (안정화 효과)<br>
-                                    - 데이터 기반으로 <b>공정 조정 포인트</b> 제시 → 개선방안 수립에 활용
+                                    - <b>압력/속도 비율이 증가</b>할수록 불량률 증가: 과도한 압력/속도 불균형 문제 발생<br>
+                                    - <b>생산 횟수가 증가</b>할수록 불량 감소: 안정화 효과<br>
+                                    - 데이터 기반으로 <b>세부 공정 개선 방안 제시를 통한 공정 효율 극대화</b> 가능
                                 </p>
                             """)
                         ),
@@ -1599,7 +1610,7 @@ def server(input, output, session):
                  )
             ]
         ),
-        title="📘 모델 학습 도우미",
+        title=ui.HTML("<b>📘 모델 학습 도우미</b>"),
         easy_close=True,
         footer=ui.modal_button("010-4377-9710 연락주세요")
     )
@@ -2007,7 +2018,7 @@ def server(input, output, session):
             ui.markdown("**이번 예측에서 불량률은 아래 요인들의 영향을 많이 받습니다:**"),
             ui.HTML("".join(rows_html)),
             ui.input_action_button(
-                "apply_suggestions", "✅ 반영하고 다시 예측하기",
+                "apply_suggestions", "반영하고 다시 예측하기",
                 class_="btn btn-warning", style="margin-top:15px;"
             )
         ]
